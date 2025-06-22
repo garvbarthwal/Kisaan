@@ -91,6 +91,12 @@ const Navbar = () => {
 
             {isAuthenticated && user?.role === "consumer" && (
               <>
+                <Link
+                  to="/orders"
+                  className="text-gray-700 hover:text-green-500 transition-colors"
+                >
+                  Orders
+                </Link>
                 <button 
                   onClick={handleCartClick}
                   className="relative p-2 text-gray-700 hover:text-green-500 transition-colors"
@@ -174,15 +180,7 @@ const Navbar = () => {
                           Profile
                         </Link>
 
-                        {user?.role === "consumer" && (
-                          <Link
-                            to="/orders"
-                            className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
-                            onClick={() => setIsProfileOpen(false)}
-                          >
-                            Orders
-                          </Link>
-                        )}
+                        {/* Orders link removed from dropdown as it's now in the navbar */}
                       </>
                     )}
 
