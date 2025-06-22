@@ -7,7 +7,12 @@ import {
   markMessagesAsRead,
 } from "../redux/slices/messageSlice";
 import Loader from "../components/Loader";
-import { FaArrowLeft, FaPaperPlane } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaPaperPlane,
+  FaMicrophone,
+  FaMicrophoneSlash,
+} from "react-icons/fa";
 
 const ConversationPage = () => {
   const { userId } = useParams();
@@ -15,11 +20,15 @@ const ConversationPage = () => {
   const messagesEndRef = useRef(null);
 
   const [newMessage, setNewMessage] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
   const { messages, loading } = useSelector((state) => state.messages);
   const { user } = useSelector((state) => state.auth);
 
   const conversationMessages = messages[userId] || [];
 
+  // Load and mark messages
   useEffect(() => {
     dispatch(getConversationMessages(userId));
     dispatch(markMessagesAsRead(userId));
@@ -28,6 +37,31 @@ const ConversationPage = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversationMessages]);
+
+  // Speech recognition setup
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (e) => {
+      console.error("Speech recognition error", e);
+      setIsListening(false);
+    };
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setNewMessage((prev) => `${prev} ${transcript}`);
+    };
+
+    recognitionRef.current = recognition;
+  }, []);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -40,6 +74,16 @@ const ConversationPage = () => {
       })
     );
     setNewMessage("");
+  };
+
+  const handleVoiceInput = () => {
+    if (recognitionRef.current) {
+      if (isListening) {
+        recognitionRef.current.stop();
+      } else {
+        recognitionRef.current.start();
+      }
+    }
   };
 
   const formatTime = (timestamp) => {
@@ -115,18 +159,31 @@ const ConversationPage = () => {
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-200">
+        {/* Input Section */}
+        <div className="p-6 border-t border-gray-200">
           <form onSubmit={handleSendMessage} className="flex space-x-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               className="form-input flex-grow"
-              placeholder="Type your message..."
+              placeholder="   Type your message..."
             />
             <button
+              type="button"
+              onClick={handleVoiceInput}
+              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${
+                isListening
+                  ? "bg-red-100 text-red-600 hover:bg-red-200"
+                  : "bg-gray-100 text-gray-500 hover:bg-green-100"
+              }`}
+              title={isListening ? "Stop Listening" : "Start Voice Input"}
+            >
+              {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
+            </button>
+            <button
               type="submit"
-              className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 transition-colors"
+              className="bg-green-500 text-white w-10 h-12 flex items-center justify-center rounded-lg hover:bg-green-600 transition-colors"
               disabled={newMessage.trim() === ""}
             >
               <FaPaperPlane />
