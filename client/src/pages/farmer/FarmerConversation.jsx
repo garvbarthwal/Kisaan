@@ -5,9 +5,8 @@ import {
   getConversationMessages,
   sendMessage,
   markMessagesAsRead,
-} from "../redux/slices/messageSlice";
-import Loader from "../components/Loader";
-import axios from "axios";
+} from "../../redux/slices/messageSlice";
+import Loader from "../../components/Loader";
 import {
   FaArrowLeft,
   FaPaperPlane,
@@ -24,7 +23,7 @@ const ConversationPage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
-  const [translations, setTranslations] = useState({}); // messageId -> { translated, showOriginal }
+  const [translations, setTranslations] = useState({}); 
 
   const { messages, loading } = useSelector((state) => state.messages);
   const { user } = useSelector((state) => state.auth);
@@ -201,7 +200,7 @@ const ConversationPage = () => {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               className="form-input flex-grow"
-              placeholder="   Type your message ..."
+              placeholder="   Type your message ...farmer"
             />
             <button
               type="button"
@@ -230,3 +229,4 @@ const ConversationPage = () => {
 };
 
 export default ConversationPage;
+

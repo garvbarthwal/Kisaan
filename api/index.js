@@ -11,6 +11,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const connectDB = require("./db/connection");
+const translateRouter = require("./routes/translate");
 
 // Load environment variables
 dotenv.config();
@@ -41,8 +42,10 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/translate", express.json(), translateRouter);
 
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
