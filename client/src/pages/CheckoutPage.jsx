@@ -6,7 +6,7 @@ import {
   updateCartQuantity,
   clearCart,
 } from "../redux/slices/cartSlice";
-import { createOrder } from "../redux/slices/orderSlice";
+import { createOrder, resetOrderState } from "../redux/slices/orderSlice";
 import { FaArrowLeft, FaLeaf, FaTrash } from "react-icons/fa";
 import Loader from "../components/Loader";
 import { placeholder } from "../assets";
@@ -17,7 +17,7 @@ const CheckoutPage = () => {
     pickupDetails: {
       date: "",
       time: "",
-      location: "",
+      location: "Farmer's Location",
     },
     deliveryDetails: {
       address: {
@@ -42,11 +42,16 @@ const CheckoutPage = () => {
   const { user } = useSelector((state) => state.auth);
   const { loading, success, order } = useSelector((state) => state.orders);
 
+  // Clear order state when component mounts
   useEffect(() => {
-    if (success && order) {
+    dispatch(resetOrderState());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (success && order && order._id && cartItems.length === 0) {
       navigate(`/orders/${order._id}`);
     }
-  }, [success, order, navigate]);
+  }, [success, order, navigate, cartItems.length]);
 
   useEffect(() => {
     if (user && user.address) {
@@ -65,6 +70,27 @@ const CheckoutPage = () => {
     }
   }, [user]);
 
+  // Set default date and time for pickup/delivery
+  useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowString = tomorrow.toISOString().split('T')[0];
+    
+    setOrderDetails(prev => ({
+      ...prev,
+      pickupDetails: {
+        ...prev.pickupDetails,
+        date: prev.pickupDetails.date || tomorrowString,
+        time: prev.pickupDetails.time || "10:00"
+      },
+      deliveryDetails: {
+        ...prev.deliveryDetails,
+        date: prev.deliveryDetails.date || tomorrowString,
+        time: prev.deliveryDetails.time || "10:00"
+      }
+    }));
+  }, []);
+
   const handleRemoveItem = (productId) => {
     dispatch(removeFromCart(productId));
   };
@@ -75,6 +101,7 @@ const CheckoutPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Input changed: ${name} = ${value}`);
 
     if (name.includes(".")) {
       const [parent, child, grandchild] = name.split(".");
@@ -110,16 +137,63 @@ const CheckoutPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    console.log("Form submitted", { orderType, orderDetails, cartItems });
+
+    // Basic validation
+    if (orderType === "pickup") {
+      if (!orderDetails.pickupDetails.date || !orderDetails.pickupDetails.time || !orderDetails.pickupDetails.location) {
+        alert("Please fill in all pickup details (date, time, and location)");
+        return;
+      }
+    } else {
+      if (!orderDetails.deliveryDetails.address.street || !orderDetails.deliveryDetails.address.city || 
+          !orderDetails.deliveryDetails.address.state || !orderDetails.deliveryDetails.date || !orderDetails.deliveryDetails.time) {
+        alert("Please fill in all delivery details (address, date, and time)");
+        return;
+      }
+    }
+
+    // Convert cart items to the format expected by the backend
+    const items = cartItems.map(item => ({
+      product: item.productId,
+      quantity: item.quantity,
+      price: item.price
+    }));
+
+    // Prepare order details with proper date formatting
+    let orderDetailsToSend = {};
+    
+    if (orderType === "pickup") {
+      orderDetailsToSend.pickupDetails = {
+        ...orderDetails.pickupDetails,
+        date: orderDetails.pickupDetails.date || null
+      };
+      console.log("Pickup date being sent:", orderDetails.pickupDetails.date);
+    } else {
+      console.log("Delivery date string from form:", orderDetails.deliveryDetails.date);
+      console.log("Delivery time from form:", orderDetails.deliveryDetails.time);
+      
+      orderDetailsToSend.deliveryDetails = {
+        address: orderDetails.deliveryDetails.address,
+        requestedDate: orderDetails.deliveryDetails.date || null,
+        requestedTime: orderDetails.deliveryDetails.time || "",
+        finalizedDate: null,
+        finalizedTime: "",
+        isDateFinalized: false
+      };
+      
+      console.log("Final delivery details being sent:", orderDetailsToSend.deliveryDetails);
+    }
+
     const orderData = {
       farmer: farmerId,
-      orderType,
-      ...(orderType === "pickup"
-        ? { pickupDetails: orderDetails.pickupDetails }
-        : { deliveryDetails: orderDetails.deliveryDetails }),
+      items,
+      ...orderDetailsToSend,
       paymentMethod: orderDetails.paymentMethod,
       notes: orderDetails.notes,
     };
 
+    console.log("Order data being sent:", orderData);
     dispatch(createOrder(orderData));
   };
 
@@ -258,11 +332,21 @@ const CheckoutPage = () => {
         <div className="lg:w-5/12">
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-2xl font-bold mb-6">Order Details</h2>
+            
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-medium text-blue-800 mb-2">Order Summary</h3>
+              <p className="text-sm text-blue-700">
+                {orderType === "pickup" 
+                  ? "Please select pickup date and time. Pickup will be at the farmer's location."
+                  : "Please provide delivery address, date, and time details."
+                }
+              </p>
+            </div>
 
             <form onSubmit={handleSubmit}>
               <div className="mb-6">
                 <label className="text-gray-700 font-medium mb-2 block">
-                  Order Type
+                  Order Type *
                 </label>
                 <div className="flex space-x-4">
                   <label className="flex items-center cursor-pointer">
@@ -323,7 +407,16 @@ const CheckoutPage = () => {
                       id="pickupTime"
                       name="pickupDetails.time"
                       value={orderDetails.pickupDetails.time}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        console.log("Pickup time input changed:", e.target.value);
+                        setOrderDetails({
+                          ...orderDetails,
+                          pickupDetails: {
+                            ...orderDetails.pickupDetails,
+                            time: e.target.value
+                          }
+                        });
+                      }}
                       className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
                       required
                     />
@@ -336,15 +429,15 @@ const CheckoutPage = () => {
                     >
                       Pickup Location
                     </label>
+                    <div className="w-full p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-700">
+                      Pickup will be at the farmer's location
+                    </div>
                     <input
-                      type="text"
+                      type="hidden"
                       id="pickupLocation"
                       name="pickupDetails.location"
-                      value={orderDetails.pickupDetails.location}
+                      value="Farmer's Location"
                       onChange={handleInputChange}
-                      placeholder="Enter pickup location"
-                      className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                      required
                     />
                   </div>
                 </div>
@@ -459,7 +552,16 @@ const CheckoutPage = () => {
                       id="deliveryTime"
                       name="deliveryDetails.time"
                       value={orderDetails.deliveryDetails.time}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        console.log("Time input changed:", e.target.value);
+                        setOrderDetails({
+                          ...orderDetails,
+                          deliveryDetails: {
+                            ...orderDetails.deliveryDetails,
+                            time: e.target.value
+                          }
+                        });
+                      }}
                       className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
                       required
                     />
@@ -474,17 +576,9 @@ const CheckoutPage = () => {
                 >
                   Payment Method
                 </label>
-                <select
-                  id="paymentMethod"
-                  name="paymentMethod"
-                  value={orderDetails.paymentMethod}
-                  onChange={handleInputChange}
-                  className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"
-                  required
-                >
-                  <option value="cash">Cash on Delivery/Pickup</option>
-                  <option value="upi">UPI Payment</option>
-                </select>
+                <div className="w-full rounded-lg border-gray-300 bg-gray-100 p-3">
+                  COD - currently accepting cash payments only
+                </div>
               </div>
 
               <div className="mt-6">
@@ -508,10 +602,16 @@ const CheckoutPage = () => {
               <div className="mt-8">
                 <button
                   type="submit"
-                  className="btn btn-primary w-full py-3 text-lg font-bold rounded-xl"
+                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors"
                 >
-                  {loading ? t("Placing Order...") : t("Place Order")}
+                  {loading ? "Placing Order..." : "Place Order"}
                 </button>
+                {cartItems.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-2 text-center">
+                    Total: ₹{calculateTotal().toFixed(2)}
+                  </p>
+                )}
               </div>
             </form>
           </div>

@@ -268,7 +268,7 @@ const FarmerDetailPage = () => {
                     Business Hours
                   </h3>
                   <p className="text-gray-700">
-                    {profile.businessHours || t("Not specified")}
+                    {profile.businessHours || "Not specified"}
                   </p>
                 </div>
                 <div>

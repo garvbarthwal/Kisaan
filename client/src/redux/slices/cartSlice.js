@@ -21,6 +21,18 @@ const cartSlice = createSlice({
     addToCart: (state, action) => {
       const { product, quantity } = action.payload;
 
+      // Check if product is in stock
+      if (product.quantityAvailable <= 0) {
+        toast.error(`${product.name} is out of stock`);
+        return;
+      }
+
+      // Check if requested quantity exceeds available stock
+      if (quantity > product.quantityAvailable) {
+        toast.error(`Only ${product.quantityAvailable} ${product.unit} available for ${product.name}`);
+        return;
+      }
+
       if (
         state.cartItems.length === 0 ||
         product.farmer._id === state.farmerId
@@ -30,9 +42,16 @@ const cartSlice = createSlice({
         );
 
         if (existItem) {
+          // Check if adding this quantity would exceed available stock
+          const newTotalQuantity = existItem.quantity + quantity;
+          if (newTotalQuantity > product.quantityAvailable) {
+            toast.error(`Cannot add ${quantity} more ${product.unit}. Only ${product.quantityAvailable - existItem.quantity} ${product.unit} remaining for ${product.name}`);
+            return;
+          }
+
           state.cartItems = state.cartItems.map((item) =>
             item.productId === product._id
-              ? { ...item, quantity: item.quantity + quantity }
+              ? { ...item, quantity: newTotalQuantity }
               : item
           );
           toast.info(`Updated ${product.name} quantity in your cart`);
@@ -46,6 +65,7 @@ const cartSlice = createSlice({
                 : null,
             price: product.price,
             quantity,
+            unit: product.unit,
             farmerId: product.farmer._id,
             farmerName: product.farmer.name,
           });
@@ -82,6 +102,20 @@ const cartSlice = createSlice({
     },
     updateCartQuantity: (state, action) => {
       const { productId, quantity } = action.payload;
+
+      // Find the item to update
+      const item = state.cartItems.find((item) => item.productId === productId);
+      if (!item) {
+        toast.error("Item not found in cart");
+        return;
+      }
+
+      // Note: We would need to pass the product data to validate against current stock
+      // For now, we'll just ensure quantity is positive
+      if (quantity <= 0) {
+        toast.error("Quantity must be greater than 0");
+        return;
+      }
 
       state.cartItems = state.cartItems.map((item) =>
         item.productId === productId ? { ...item, quantity } : item

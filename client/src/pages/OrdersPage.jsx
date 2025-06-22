@@ -14,10 +14,23 @@ const OrdersPage = () => {
     dispatch(getConsumerOrders());
   }, [dispatch]);
 
-  const filteredOrders =
-    filter === "all"
-      ? orders
-      : orders.filter((order) => order.status === filter);
+  const filteredOrders = filter === "all"
+    ? orders
+    : filter === "pending"
+      ? orders.filter(
+          (order) => 
+            order.status === "pending" || 
+            (order.status === "accepted" && 
+             order.deliveryDetails && 
+             !order.deliveryDetails.isDateFinalized)
+        )
+      : filter === "accepted"
+        ? orders.filter(
+            (order) => 
+              order.status === "accepted" && 
+              (!order.deliveryDetails || order.deliveryDetails.isDateFinalized)
+          )
+        : orders.filter((order) => order.status === filter);
 
   if (loading) {
     return <Loader />;

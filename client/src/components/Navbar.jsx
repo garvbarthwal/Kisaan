@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/slices/authSlice";
+import { resetOrderState } from "../redux/slices/orderSlice";
+import { toast } from "react-toastify";
 import {
   FaLeaf,
   FaShoppingCart,
@@ -9,7 +11,9 @@ import {
   FaTimes,
   FaUser,
   FaSignOutAlt,
+  FaBell,
 } from "react-icons/fa";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,6 +24,12 @@ const Navbar = () => {
 
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.cart);
+  const { farmerOrders } = useSelector((state) => state.orders);
+
+  // Calculate pending orders for farmers
+  const pendingOrdersCount = user?.role === "farmer" 
+    ? farmerOrders.filter(order => order.status === "pending").length 
+    : 0;
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -32,6 +42,16 @@ const Navbar = () => {
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");
+  };
+
+  const handleCartClick = () => {
+    if (cartItems.length > 0) {
+      // Reset order state before navigating to checkout
+      dispatch(resetOrderState());
+      navigate("/checkout");
+    } else {
+      toast.info("Your cart is empty");
+    }
   };
 
   return (
@@ -70,14 +90,35 @@ const Navbar = () => {
             </Link>
 
             {isAuthenticated && user?.role === "consumer" && (
-              <Link to="/checkout" className="relative">
-                <FaShoppingCart className="text-gray-700 hover:text-green-500 text-xl transition-colors" />
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartItems.length}
-                  </span>
-                )}
-              </Link>
+              <>
+                <button 
+                  onClick={handleCartClick}
+                  className="relative p-2 text-gray-700 hover:text-green-500 transition-colors"
+                  aria-label="Shopping Cart"
+                >
+                  <FaShoppingCart className="text-xl" />
+                  {cartItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItems.length}
+                    </span>
+                  )}
+                </button>
+                <NotificationBell />
+              </>
+            )}
+
+            {isAuthenticated && user?.role === "farmer" && (
+              <>
+                <Link to="/farmer/orders" className="relative flex items-center">
+                  <span className="text-gray-700 hover:text-green-500 transition-colors font-medium">Orders</span>
+                  {pendingOrdersCount > 0 && (
+                    <span className="ml-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {pendingOrdersCount}
+                    </span>
+                  )}
+                </Link>
+                <NotificationBell />
+              </>
             )}
 
             {isAuthenticated ? (
@@ -133,13 +174,15 @@ const Navbar = () => {
                           Profile
                         </Link>
 
-                        <Link
-                          to="/orders"
-                          className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
-                          onClick={() => setIsProfileOpen(false)}
-                        >
-                          Orders
-                        </Link>
+                        {user?.role === "consumer" && (
+                          <Link
+                            to="/orders"
+                            className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
+                            onClick={() => setIsProfileOpen(false)}
+                          >
+                            Orders
+                          </Link>
+                        )}
                       </>
                     )}
 
@@ -233,15 +276,38 @@ const Navbar = () => {
               </Link>
 
               {isAuthenticated && user?.role === "consumer" && (
-                <Link
-                  to="/checkout"
-                  className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors"
-                  onClick={toggleMenu}
+                <button
+                  onClick={() => {
+                    if (cartItems.length > 0) {
+                      dispatch(resetOrderState());
+                      navigate("/checkout");
+                    } else {
+                      toast.info("Your cart is empty");
+                    }
+                    toggleMenu();
+                  }}
+                  className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors text-left"
                 >
                   <FaShoppingCart />
                   <span>Cart ({cartItems.length})</span>
+                </button>
+              )}
+              
+              {isAuthenticated && user?.role === "farmer" && (
+                <Link
+                  to="/farmer/orders"
+                  className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors"
+                  onClick={toggleMenu}
+                >
+                  <span>Orders</span>
+                  {pendingOrdersCount > 0 && (
+                    <span className="bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {pendingOrdersCount}
+                    </span>
+                  )}
                 </Link>
               )}
+              
               {isAuthenticated ? (
                 <>
                   {user?.role === "admin" && (
@@ -281,13 +347,15 @@ const Navbar = () => {
                     Profile
                   </Link>
 
-                  <Link
-                    to="/orders"
-                    className="text-gray-700 hover:text-green-500 transition-colors"
-                    onClick={toggleMenu}
-                  >
-                    Orders
-                  </Link>
+                  {user?.role === "consumer" && (
+                    <Link
+                      to="/orders"
+                      className="text-gray-700 hover:text-green-500 transition-colors"
+                      onClick={toggleMenu}
+                    >
+                      Orders
+                    </Link>
+                  )}
 
                   <Link
                     to="/messages"
@@ -302,7 +370,7 @@ const Navbar = () => {
                       handleLogout();
                       toggleMenu();
                     }}
-                    className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors"
+                    className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors text-left"
                   >
                     <FaSignOutAlt />
                     <span>Logout</span>
