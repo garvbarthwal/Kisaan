@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { getOrderDetails } from "../redux/slices/orderSlice";
+import { getOrderDetails, cancelOrder } from "../redux/slices/orderSlice";
 import { sendMessage } from "../redux/slices/messageSlice";
 import Loader from "../components/Loader";
 import {
@@ -11,6 +11,7 @@ import {
   FaCalendarAlt,
   FaClock,
   FaComment,
+  FaTimes,
 } from "react-icons/fa";
 
 const OrderDetailPage = () => {
@@ -26,6 +27,47 @@ const OrderDetailPage = () => {
   useEffect(() => {
     dispatch(getOrderDetails(id));
   }, [dispatch, id]);
+
+  useEffect(() => {
+    if (order && order.deliveryDetails) {
+      console.log("Order delivery details:", order.deliveryDetails);
+      console.log("Requested date type:", typeof order.deliveryDetails.requestedDate);
+      console.log("Requested date value:", order.deliveryDetails.requestedDate);
+      console.log("Requested time:", order.deliveryDetails.requestedTime);
+      
+      // Let's check if the requestedDate is being properly set
+      if (order.deliveryDetails.requestedDate) {
+        const requestedDate = new Date(order.deliveryDetails.requestedDate);
+        console.log("Requested date parsed:", requestedDate);
+        console.log("Requested date formatted:", requestedDate.toLocaleDateString());
+      }
+    }
+  }, [order]);
+
+  // Function to check if order can be cancelled
+  const canCancelOrder = () => {
+    if (user.role !== "consumer") return false;
+    if (!order || (order.status !== "accepted" && order.status !== "pending")) return false;
+    
+    // For accepted orders, check if within 2 hours
+    if (order.status === "accepted") {
+      const orderTime = new Date(order.createdAt);
+      const currentTime = new Date();
+      const timeDifference = currentTime - orderTime;
+      const twoHoursInMs = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+      
+      return timeDifference <= twoHoursInMs;
+    }
+    
+    // Pending orders can always be cancelled
+    return true;
+  };
+
+  const handleCancelOrder = () => {
+    if (window.confirm("Are you sure you want to cancel this order?")) {
+      dispatch(cancelOrder(id));
+    }
+  };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -51,8 +93,43 @@ const OrderDetailPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    console.log("Formatting date:", dateString);
+    
+    try {
+      // For ISO date strings that end with Z (UTC/Zulu time)
+      if (typeof dateString === 'string' && dateString.endsWith('Z')) {
+        // Extract just the date part from the ISO string
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-').map(Number);
+        
+        // Create a date using local timezone (no UTC conversion)
+        return `${day} ${getMonthName(month)} ${year}`;
+      }
+      
+      // For other date formats
+      const date = new Date(dateString);
+      console.log("Converted to Date object:", date);
+      
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date:", dateString);
+        return "Invalid date";
+      }
+      
+      const options = { year: "numeric", month: "long", day: "numeric" };
+      return date.toLocaleDateString(undefined, options);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Error formatting date";
+    }
+  };
+  
+  // Helper function to get month name
+  const getMonthName = (monthNum) => {
+    const months = [
+      "January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return months[monthNum - 1]; // monthNum is 1-indexed
   };
 
   const getStatusBadgeClass = (status) => {
@@ -97,7 +174,7 @@ const OrderDetailPage = () => {
                 Placed on {formatDate(order.createdAt)}
               </p>
             </div>
-            <div className="mt-4 md:mt-0">
+            <div className="mt-4 md:mt-0 flex items-center gap-3">
               <span
                 className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusBadgeClass(
                   order.status
@@ -105,8 +182,31 @@ const OrderDetailPage = () => {
               >
                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
               </span>
+              
+              {canCancelOrder() && (
+                <button
+                  onClick={handleCancelOrder}
+                  title={order.status === "pending" 
+                    ? "Pending orders can be cancelled anytime" 
+                    : "Accepted orders can be cancelled within 2 hours of placement"}
+                  className="bg-red-100 hover:bg-red-200 text-red-600 text-xs px-2 py-1 rounded transition-colors"
+                >
+                  Cancel Order
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Cancel order info text */}
+          {canCancelOrder() && (
+            <div className="mb-6 text-right">
+              <p className="text-xs text-red-500">
+                {order.status === "pending" 
+                  ? "Pending orders can be cancelled anytime" 
+                  : "Accepted orders can be cancelled within 2 hours of placement"}
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="bg-gray-50 p-6 rounded-xl">
@@ -151,22 +251,20 @@ const OrderDetailPage = () => {
                       {order.pickupDetails.location}
                     </span>
                   </div>
-                  {order.pickupDetails.date && (
-                    <div className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
-                      <FaCalendarAlt className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        {formatDate(order.pickupDetails.date)}
-                      </span>
-                    </div>
-                  )}
-                  {order.pickupDetails.time && (
-                    <div className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
-                      <FaClock className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        {order.pickupDetails.time}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
+                    <FaCalendarAlt className="text-green-500 mt-1 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">
+                      {order.pickupDetails.date ? 
+                        formatDate(order.pickupDetails.date) : 
+                        "Date not specified"}
+                    </span>
+                  </div>
+                  <div className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
+                    <FaClock className="text-green-500 mt-1 mr-3 flex-shrink-0" />
+                    <span className="text-gray-700">
+                      {order.pickupDetails.time || "Time not specified"}
+                    </span>
+                  </div>
                 </div>
               ) : order.deliveryDetails && order.deliveryDetails.address ? (
                 <div className="space-y-4">
@@ -183,20 +281,46 @@ const OrderDetailPage = () => {
                       </p>
                     </div>
                   </div>
-                  {order.deliveryDetails.date && (
-                    <div className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
-                      <FaCalendarAlt className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        {formatDate(order.deliveryDetails.date)}
+                  
+                  {/* Requested Date/Time */}
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <h4 className="font-medium text-blue-800 mb-2">Your Requested Date & Time</h4>
+                    <div className="flex items-start bg-white p-2 rounded border border-blue-100 mb-2">
+                      <FaCalendarAlt className="text-blue-500 mt-1 mr-2 flex-shrink-0" />
+                      <span className="text-blue-700">
+                        {order.deliveryDetails.requestedDate ? 
+                          formatDate(order.deliveryDetails.requestedDate) : 
+                          "Date not specified"}
                       </span>
                     </div>
-                  )}
-                  {order.deliveryDetails.time && (
-                    <div className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
-                      <FaClock className="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        {order.deliveryDetails.time}
+                    <div className="flex items-start bg-white p-2 rounded border border-blue-100">
+                      <FaClock className="text-blue-500 mt-1 mr-2 flex-shrink-0" />
+                      <span className="text-blue-700">
+                        {order.deliveryDetails.requestedTime || "Time not specified"}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Finalized Date/Time */}
+                  {order.deliveryDetails.isDateFinalized && (
+                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                      <h4 className="font-medium text-green-800 mb-2">Finalized Delivery Date & Time</h4>
+                      {order.deliveryDetails.finalizedDate && (
+                        <div className="flex items-start bg-white p-2 rounded border border-green-100 mb-2">
+                          <FaCalendarAlt className="text-green-500 mt-1 mr-2 flex-shrink-0" />
+                          <span className="text-green-700 font-medium">
+                            {formatDate(order.deliveryDetails.finalizedDate)}
+                          </span>
+                        </div>
+                      )}
+                      {order.deliveryDetails.finalizedTime && (
+                        <div className="flex items-start bg-white p-2 rounded border border-green-100">
+                          <FaClock className="text-green-500 mt-1 mr-2 flex-shrink-0" />
+                          <span className="text-green-700 font-medium">
+                            {order.deliveryDetails.finalizedTime}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

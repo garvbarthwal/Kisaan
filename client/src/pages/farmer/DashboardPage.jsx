@@ -12,7 +12,11 @@ import {
   FaPlus,
   FaChartLine,
   FaRobot,
+  FaBell,
+  FaClipboardList,
+  FaShippingFast,
 } from "react-icons/fa";
+import { updateOrderStatus } from "../../redux/slices/orderSlice";
 
 const DashboardPage = () => {
   const dispatch = useDispatch();
@@ -28,18 +32,33 @@ const DashboardPage = () => {
   const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
+    console.log("Dispatching farmer data requests");
     dispatch(getFarmerProducts());
     dispatch(getFarmerOrders());
     dispatch(getConversations());
   }, [dispatch]);
 
+  useEffect(() => {
+    console.log("Farmer orders data:", farmerOrders);
+  }, [farmerOrders]);
+
   const orderCounts = {
     pending: ordersLoading
       ? 0
-      : farmerOrders.filter((order) => order.status === "pending").length,
+      : farmerOrders.filter(
+          (order) => 
+            order.status === "pending" || 
+            (order.status === "accepted" && 
+             order.deliveryDetails && 
+             !order.deliveryDetails.isDateFinalized)
+        ).length,
     accepted: ordersLoading
       ? 0
-      : farmerOrders.filter((order) => order.status === "accepted").length,
+      : farmerOrders.filter(
+          (order) => 
+            order.status === "accepted" && 
+            (!order.deliveryDetails || order.deliveryDetails.isDateFinalized)
+        ).length,
     completed: ordersLoading
       ? 0
       : farmerOrders.filter((order) => order.status === "completed").length,
@@ -103,21 +122,33 @@ const DashboardPage = () => {
         <div className="glass p-6 rounded-xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Pending Orders</h3>
-            <FaShoppingCart className="text-orange-500 text-xl" />
+            <FaClipboardList className="text-orange-500 text-xl" />
           </div>
           <p className="text-3xl font-bold">{orderCounts.pending}</p>
-          <Link
-            to="/farmer/orders"
-            className="text-green-500 hover:text-green-700 text-sm mt-2 inline-block"
-          >
-            View All Orders
-          </Link>
+          <div className="flex gap-2 mt-3">
+            <Link
+              to="/farmer/orders"
+              className="text-green-500 hover:text-green-700 text-sm inline-block"
+            >
+              View All Orders
+            </Link>
+            {orderCounts.pending > 0 && (
+              <Link
+                to="/farmer/orders"
+                className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 rounded-full"
+              >
+                Review Now
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="glass p-6 rounded-xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Unread Messages</h3>
-            <FaComment className="text-blue-500 text-xl" />
+            <div className="bg-blue-500 text-white px-3 py-1 rounded-md font-bold">
+              Orders
+            </div>
           </div>
           <p className="text-3xl font-bold">{unreadMessages}</p>
           <Link
@@ -179,6 +210,7 @@ const DashboardPage = () => {
                   <th className="text-center py-3">Date</th>
                   <th className="text-center py-3">Status</th>
                   <th className="text-right py-3">Total</th>
+                  <th className="text-right py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,19 +230,60 @@ const DashboardPage = () => {
                     </td>
                     <td className="text-center py-3">
                       <span
-                        className={`badge ${order.status === "pending"
-                          ? "badge-blue"
-                          : order.status === "accepted" ||
-                            order.status === "completed"
-                            ? "badge-green"
-                            : "badge-red"
-                          }`}
+                        className={`badge ${
+                          order.status === "pending" || 
+                          (order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized)
+                            ? "badge-blue"
+                            : order.status === "accepted" || order.status === "completed"
+                              ? "badge-green"
+                              : "badge-red"
+                        }`}
                       >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized
+                          ? "Awaiting Delivery Details"
+                          : order.status.charAt(0).toUpperCase() + order.status.slice(1)
+                        }
                       </span>
                     </td>
                     <td className="text-right py-3">
                       ₨{order.totalAmount.toFixed(2)}
+                    </td>
+                    <td className="text-right py-3">
+                      {order.status === "pending" && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => dispatch(updateOrderStatus({ id: order._id, status: "accepted" }))}
+                            className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => dispatch(updateOrderStatus({ id: order._id, status: "rejected" }))}
+                            className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                      {order.status === "accepted" && (
+                        <div className="flex gap-1">
+                          {order.deliveryDetails && !order.deliveryDetails.isDateFinalized ? (
+                            <Link
+                              to="/farmer/orders"
+                              className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600"
+                            >
+                              Finalize Delivery
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => dispatch(updateOrderStatus({ id: order._id, status: "completed" }))}
+                              className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                            >
+                              Complete
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -265,7 +338,7 @@ const DashboardPage = () => {
                     <td className="text-center py-3">
                       ₨{product.price.toFixed(2)}
                     </td>
-                    <td className="text-center py-3">{product.countInStock}</td>
+                    <td className="text-center py-3">{product.quantityAvailable}</td>
                     <td className="text-right py-3">
                       <Link
                         to={`/farmer/products/edit/${product._id}`}

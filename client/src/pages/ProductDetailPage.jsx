@@ -191,9 +191,9 @@ const ProductDetailPage = () => {
               <div className="text-2xl font-bold text-green-700">
                 ₹{product.price}/{product.unit}
               </div>
-              {product.stock > 0 ? (
+              {product.quantityAvailable > 0 ? (
                 <div className="text-green-600 mt-1">
-                  In Stock: {product.stock} {product.unit}
+                  In Stock: {product.quantityAvailable} {product.unit}
                 </div>
               ) : (
                 <div className="text-red-600 mt-1">Out of Stock</div>
@@ -205,7 +205,7 @@ const ProductDetailPage = () => {
               <p className="text-gray-700">{product.description}</p>
             </div>
 
-            {product.stock > 0 && (
+            {product.quantityAvailable > 0 && (
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="w-full md:w-1/3">
                   <label
@@ -218,7 +218,7 @@ const ProductDetailPage = () => {
                     type="number"
                     id="quantity"
                     min="1"
-                    max={product.stock}
+                    max={product.quantityAvailable}
                     value={quantity}
                     onChange={handleQuantityChange}
                     className="w-full rounded-lg border-gray-300 focus:ring-green-500 focus:border-green-500"

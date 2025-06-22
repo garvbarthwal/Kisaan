@@ -31,6 +31,13 @@ const ProductCard = ({ product }) => {
             Organic
           </span>
         )}
+        <span className={`absolute top-2 left-2 px-2 py-1 text-xs font-semibold rounded-full ${
+          product.quantityAvailable > 0 
+            ? "bg-green-100 text-green-800" 
+            : "bg-red-100 text-red-800"
+        }`}>
+          {product.quantityAvailable > 0 ? "In Stock" : "Out of Stock"}
+        </span>
       </div>
       <div className="p-4">
         <h3 className="text-lg font-semibold mb-1 truncate">{product.name}</h3>

@@ -84,6 +84,37 @@ export const getAllOrders = createAsyncThunk("orders/getAllOrders", async (_, { 
   }
 })
 
+// Finalize delivery date (farmer only)
+export const finalizeDeliveryDate = createAsyncThunk(
+  "orders/finalizeDeliveryDate",
+  async ({ id, finalizedDate, finalizedTime }, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.put(`/api/orders/${id}/finalize-delivery`, {
+        finalizedDate,
+        finalizedTime
+      });
+      return data;
+    } catch (error) {
+      const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+      return rejectWithValue(message);
+    }
+  }
+);
+
+// Cancel order (consumer only, within 2 hours)
+export const cancelOrder = createAsyncThunk(
+  "orders/cancelOrder",
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await axiosInstance.put(`/api/orders/${id}/cancel`);
+      return data;
+    } catch (error) {
+      const message = error.response && error.response.data.message ? error.response.data.message : error.message;
+      return rejectWithValue(message);
+    }
+  }
+);
+
 const initialState = {
   orders: [],
   farmerOrders: [],
@@ -106,6 +137,11 @@ const orderSlice = createSlice({
     },
     clearOrderDetails: (state) => {
       state.order = null
+    },
+    resetOrderState: (state) => {
+      state.order = null;
+      state.success = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -198,20 +234,66 @@ const orderSlice = createSlice({
       })
       // Get all orders (admin)
       .addCase(getAllOrders.pending, (state) => {
-        state.loading = true
-        state.error = null
+        state.loading = true;
+        state.error = null;
       })
       .addCase(getAllOrders.fulfilled, (state, action) => {
-        state.loading = false
-        state.adminOrders = action.payload.data
+        state.loading = false;
+        state.adminOrders = action.payload.data;
       })
       .addCase(getAllOrders.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
+        state.loading = false;
+        state.error = action.payload;
       })
+      // Finalize delivery date
+      .addCase(finalizeDeliveryDate.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(finalizeDeliveryDate.fulfilled, (state, action) => {
+        state.loading = false;
+        state.order = action.payload.data;
+
+        // Update order in farmerOrders array
+        if (state.farmerOrders.length > 0) {
+          state.farmerOrders = state.farmerOrders.map((order) =>
+            order._id === action.payload.data._id ? action.payload.data : order,
+          );
+        }
+
+        toast.success("Delivery date finalized successfully!");
+      })
+      .addCase(finalizeDeliveryDate.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        toast.error(action.payload);
+      })
+      // Cancel order
+      .addCase(cancelOrder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(cancelOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        state.order = action.payload.data;
+
+        // Update order in orders array (consumer orders)
+        if (state.orders.length > 0) {
+          state.orders = state.orders.map((order) =>
+            order._id === action.payload.data._id ? action.payload.data : order,
+          );
+        }
+
+        toast.success("Order cancelled successfully!");
+      })
+      .addCase(cancelOrder.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        toast.error(action.payload);
+      });
   },
 })
 
-export const { clearOrderError, resetOrderSuccess, clearOrderDetails } = orderSlice.actions
+export const { clearOrderError, resetOrderSuccess, clearOrderDetails, resetOrderState } = orderSlice.actions
 
 export default orderSlice.reducer

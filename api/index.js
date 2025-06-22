@@ -9,6 +9,7 @@ const orderRoutes = require("./routes/orderRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const connectDB = require("./db/connection");
 
 // Load environment variables
@@ -39,6 +40,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Start server
 app.listen(PORT, () => {
