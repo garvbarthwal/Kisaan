@@ -185,4 +185,4 @@ For any questions, feedback, or collaboration opportunities, feel free to contac
 
 ---
 
-> Built with ❤️ by Team TechTitans | **Full Stack Web Development Hackathon**
+> Built with ❤️ by Team TechTitans
