@@ -13,18 +13,21 @@ exports.sendMessage = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Receiver not found" });
-    }
-
-    const message = await Message.create({
+    } const newMessage = await Message.create({
       sender: req.user._id,
       receiver,
       content,
       relatedOrder,
     });
 
+    // Populate sender and receiver for consistent frontend display
+    const populatedMessage = await Message.findById(newMessage._id)
+      .populate("sender", "name role")
+      .populate("receiver", "name role");
+
     res.status(201).json({
       success: true,
-      data: message,
+      data: populatedMessage,
     });
   } catch (error) {
     console.error(error);
@@ -98,7 +101,7 @@ exports.getConversations = async (req, res) => {
           },
           unreadCount:
             message.receiver._id.toString() === req.user._id.toString() &&
-            !message.isRead
+              !message.isRead
               ? 1
               : 0,
         };

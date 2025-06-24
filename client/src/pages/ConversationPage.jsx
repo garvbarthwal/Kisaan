@@ -64,12 +64,18 @@ const ConversationPage = () => {
 
     recognitionRef.current = recognition;
   }, []);
-
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (newMessage.trim() === "") return;
 
-    dispatch(sendMessage({ receiver: userId, content: newMessage }));
+    dispatch(sendMessage({ receiver: userId, content: newMessage }))
+      .unwrap()
+      .then(() => {
+        // Force scroll to bottom after new message
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      });
     setNewMessage("");
   };
 
@@ -170,8 +176,8 @@ const ConversationPage = () => {
                   >
                     <div
                       className={`max-w-[70%] rounded-lg p-3 relative ${isMe
-                          ? "bg-green-500 text-white rounded-tr-none"
-                          : "bg-white border border-gray-200 rounded-tl-none"
+                        ? "bg-green-500 text-white rounded-tr-none"
+                        : "bg-white border border-gray-200 rounded-tl-none"
                         }`}
                     >
                       <p className="mb-1">
@@ -224,8 +230,8 @@ const ConversationPage = () => {
               type="button"
               onClick={handleVoiceInput}
               className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${isListening
-                  ? "bg-red-100 text-red-600 hover:bg-red-200"
-                  : "bg-gray-100 text-gray-500 hover:bg-green-100"
+                ? "bg-red-100 text-red-600 hover:bg-red-200"
+                : "bg-gray-100 text-gray-500 hover:bg-green-100"
                 }`}
               title={isListening ? "Stop Listening" : "Start Voice Input"}
             >

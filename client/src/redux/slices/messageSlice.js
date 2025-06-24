@@ -85,18 +85,35 @@ const messageSlice = createSlice({
       .addCase(sendMessage.pending, (state) => {
         state.loading = true
         state.error = null
-      })
-      .addCase(sendMessage.fulfilled, (state, action) => {
+      }).addCase(sendMessage.fulfilled, (state, action) => {
         state.loading = false
 
-        const { receiver } = action.payload.data
+        const { receiver, sender } = action.payload.data
         const receiverId = receiver._id || receiver
+
+        // Get current user from state.messages for the current conversation
+        const currentConversation = state.messages[receiverId]
+        const currentUserInfo = currentConversation && currentConversation.length > 0
+          ? (currentConversation[0].sender._id === sender
+            ? currentConversation[0].sender
+            : currentConversation[0].receiver)
+          : null
+
+        // Create a properly formatted message with populated sender/receiver
+        const formattedMessage = {
+          ...action.payload.data,
+          sender: typeof sender === 'object' ? sender : {
+            _id: sender,
+            // If we have current user info from previous messages, use it
+            ...(currentUserInfo && currentUserInfo._id === sender ? currentUserInfo : {})
+          }
+        }
 
         // Add message to conversation
         if (state.messages[receiverId]) {
-          state.messages[receiverId].push(action.payload.data)
+          state.messages[receiverId].push(formattedMessage)
         } else {
-          state.messages[receiverId] = [action.payload.data]
+          state.messages[receiverId] = [formattedMessage]
         }
       })
       .addCase(sendMessage.rejected, (state, action) => {
