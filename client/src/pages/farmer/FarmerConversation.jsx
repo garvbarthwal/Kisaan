@@ -14,11 +14,15 @@ import {
   FaMicrophoneSlash,
   FaGlobe,
 } from "react-icons/fa";
+import axios from "../../utils/axiosConfig";
 
 const ConversationPage = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -31,13 +35,26 @@ const ConversationPage = () => {
   const conversationMessages = messages[userId] || [];
 
   useEffect(() => {
-    dispatch(getConversationMessages(userId));
+    // Initial load of messages
+    dispatch(getConversationMessages(userId))
+      .unwrap()
+      .then(() => {
+        setInitialLoadComplete(true);
+      });
     dispatch(markMessagesAsRead(userId));
   }, [dispatch, userId]);
 
+  // Scroll to bottom only on initial load
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversationMessages]);
+    if (initialLoadComplete && messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [initialLoadComplete]);
+
+  // Auto-scroll functionality removed to prevent scrolling during polling
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [conversationMessages]);
 
   // Speech recognition setup
   useEffect(() => {
@@ -63,12 +80,20 @@ const ConversationPage = () => {
 
     recognitionRef.current = recognition;
   }, []);
-
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (newMessage.trim() === "") return;
 
-    dispatch(sendMessage({ receiver: userId, content: newMessage }));
+    dispatch(sendMessage({ receiver: userId, content: newMessage }))
+      .unwrap()
+      .then(() => {
+        // Scroll to bottom when user sends a new message
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 100);
+      });
     setNewMessage("");
   };
 
@@ -139,7 +164,7 @@ const ConversationPage = () => {
           </h2>
         </div>
 
-        <div className="p-4 h-[60vh] overflow-y-auto bg-gray-50">
+        <div className="p-4 h-[60vh] overflow-y-auto bg-gray-50" ref={messagesContainerRef}>
           {conversationMessages.length > 0 ? (
             <div className="space-y-4">
               {conversationMessages.map((message) => {
@@ -153,8 +178,8 @@ const ConversationPage = () => {
                   >
                     <div
                       className={`max-w-[70%] rounded-lg p-3 relative ${isMe
-                          ? "bg-green-500 text-white rounded-tr-none"
-                          : "bg-white border border-gray-200 rounded-tl-none"
+                        ? "bg-green-500 text-white rounded-tr-none"
+                        : "bg-white border border-gray-200 rounded-tl-none"
                         }`}
                     >
                       <p className="mb-1">
@@ -203,8 +228,8 @@ const ConversationPage = () => {
               type="button"
               onClick={handleVoiceInput}
               className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${isListening
-                  ? "bg-red-100 text-red-600 hover:bg-red-200"
-                  : "bg-gray-100 text-gray-500 hover:bg-green-100"
+                ? "bg-red-100 text-red-600 hover:bg-red-200"
+                : "bg-gray-100 text-gray-500 hover:bg-green-100"
                 }`}
               title={isListening ? "Stop Listening" : "Start Voice Input"}
             >

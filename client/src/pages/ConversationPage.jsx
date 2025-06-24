@@ -20,6 +20,9 @@ const ConversationPage = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [manualScrollTriggered, setManualScrollTriggered] = useState(false);
 
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -33,7 +36,12 @@ const ConversationPage = () => {
 
   useEffect(() => {
     // Fetch messages and mark as read initially
-    dispatch(getConversationMessages(userId));
+    dispatch(getConversationMessages(userId))
+      .unwrap()
+      .then(() => {
+        // Set initial load complete after first fetch
+        setInitialLoadComplete(true);
+      });
     dispatch(markMessagesAsRead(userId));
 
     // Set up polling interval for real-time updates
@@ -46,9 +54,14 @@ const ConversationPage = () => {
     return () => clearInterval(messagesPollInterval);
   }, [dispatch, userId]);
 
+  // Scroll to bottom only on initial load or when user sends a message
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversationMessages]);
+    if (initialLoadComplete && messagesContainerRef.current && !manualScrollTriggered) {
+      // Scroll to bottom on initial load
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      setManualScrollTriggered(true);
+    }
+  }, [initialLoadComplete, manualScrollTriggered]);
 
   // Speech recognition setup
   useEffect(() => {
@@ -81,9 +94,11 @@ const ConversationPage = () => {
     dispatch(sendMessage({ receiver: userId, content: newMessage }))
       .unwrap()
       .then(() => {
-        // Force scroll to bottom after new message
+        // Scroll to bottom when user sends a new message
         setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
         }, 100);
       });
     setNewMessage("");
@@ -172,7 +187,10 @@ const ConversationPage = () => {
           </h2>
         </div>
 
-        <div className="p-4 h-[60vh] overflow-y-auto bg-gray-50">
+        <div
+          className="p-4 h-[60vh] overflow-y-auto bg-gray-50"
+          ref={messagesContainerRef}
+        >
           {conversationMessages.length > 0 ? (
             <div className="space-y-4">
               {conversationMessages.map((message) => {
