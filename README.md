@@ -4,7 +4,7 @@
 
 ---
 
-## 💡 Challenge (Given Scenario)
+## 💡 Challenge
 
 **Build a full-stack web application that connects farmers and consumers.**
 
