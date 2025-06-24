@@ -67,12 +67,20 @@ const ProductsPage = () => {
     setProductToDelete(product);
     setShowDeleteModal(true);
   };
-
   const confirmDelete = () => {
     if (productToDelete) {
-      dispatch(deleteProduct(productToDelete._id));
-      setShowDeleteModal(false);
-      setProductToDelete(null);
+      dispatch(deleteProduct(productToDelete._id))
+        .unwrap()
+        .then(() => {
+          setShowDeleteModal(false);
+          setProductToDelete(null);
+        })
+        .catch((error) => {
+          console.error("Error deleting product:", error);
+          // We still close the modal but user will see error toast from productSlice
+          setShowDeleteModal(false);
+          setProductToDelete(null);
+        });
     }
   };
 

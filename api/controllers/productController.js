@@ -140,9 +140,7 @@ exports.deleteProduct = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
-    }
-
-    // Make sure user is the product owner
+    }    // Make sure user is the product owner
     if (
       product.farmer.toString() !== req.user._id.toString() &&
       req.user.role !== "admin"
@@ -153,7 +151,8 @@ exports.deleteProduct = async (req, res) => {
       });
     }
 
-    await product.remove();
+    // Use findByIdAndDelete instead of the deprecated remove() method
+    await Product.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,
