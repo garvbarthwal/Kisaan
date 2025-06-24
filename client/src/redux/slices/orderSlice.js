@@ -41,7 +41,7 @@ export const getConsumerOrders = createAsyncThunk(
 export const getFarmerOrders = createAsyncThunk("orders/getFarmerOrders", async (_, { rejectWithValue }) => {
   try {
     const { data } = await axiosInstance.get(`/api/orders/farmer`)
-    return data
+    return { data: data.data || [] } // Ensure we always return an array
   } catch (error) {
     const message = error.response && error.response.data.message ? error.response.data.message : error.message
     return rejectWithValue(message)
@@ -180,10 +180,9 @@ const orderSlice = createSlice({
       .addCase(getFarmerOrders.pending, (state) => {
         state.loading = true
         state.error = null
-      })
-      .addCase(getFarmerOrders.fulfilled, (state, action) => {
+      }).addCase(getFarmerOrders.fulfilled, (state, action) => {
         state.loading = false
-        state.farmerOrders = action.payload.data
+        state.farmerOrders = Array.isArray(action.payload.data) ? action.payload.data : []
       })
       .addCase(getFarmerOrders.rejected, (state, action) => {
         state.loading = false

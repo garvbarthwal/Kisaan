@@ -36,24 +36,26 @@ const OrdersPage = () => {
   useEffect(() => {
     console.log("Farmer orders in OrdersPage:", farmerOrders);
   }, [farmerOrders]);
+  // Safety check - ensure farmerOrders is always an array
+  const orders = Array.isArray(farmerOrders) ? farmerOrders : [];
 
   const filteredOrders = filter === "all"
-    ? farmerOrders
+    ? orders
     : filter === "pending"
-      ? farmerOrders.filter(
-          (order) => 
-            order.status === "pending" || 
-            (order.status === "accepted" && 
-             order.deliveryDetails && 
-             !order.deliveryDetails.isDateFinalized)
-        )
+      ? orders.filter(
+        (order) =>
+          order?.status === "pending" ||
+          (order?.status === "accepted" &&
+            order?.deliveryDetails &&
+            !order?.deliveryDetails?.isDateFinalized)
+      )
       : filter === "accepted"
-        ? farmerOrders.filter(
-            (order) => 
-              order.status === "accepted" && 
-              (!order.deliveryDetails || order.deliveryDetails.isDateFinalized)
-          )
-        : farmerOrders.filter((order) => order.status === filter);
+        ? orders.filter(
+          (order) =>
+            order?.status === "accepted" &&
+            (!order?.deliveryDetails || order?.deliveryDetails?.isDateFinalized)
+        )
+        : orders.filter((order) => order?.status === filter);
 
   const handleUpdateStatus = (order) => {
     setSelectedOrder(order);
@@ -96,26 +98,26 @@ const OrdersPage = () => {
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
-    
+
     try {
       // For ISO date strings that end with Z (UTC/Zulu time)
       if (typeof dateString === 'string' && dateString.endsWith('Z')) {
         // Extract just the date part from the ISO string
         const datePart = dateString.split('T')[0];
         const [year, month, day] = datePart.split('-').map(Number);
-        
+
         // Create a date using local timezone (no UTC conversion)
         return `${day} ${getMonthName(month)} ${year}`;
       }
-      
+
       // For other date formats
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
         console.error("Invalid date:", dateString);
         return "Invalid date";
       }
-      
+
       const options = { year: "numeric", month: "short", day: "numeric" };
       return date.toLocaleDateString(undefined, options);
     } catch (error) {
@@ -123,11 +125,11 @@ const OrdersPage = () => {
       return "Error formatting date";
     }
   };
-  
+
   // Helper function to get month name
   const getMonthName = (monthNum) => {
     const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
     return months[monthNum - 1]; // monthNum is 1-indexed
@@ -145,61 +147,55 @@ const OrdersPage = () => {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg ${
-              filter === "all"
+            className={`px-4 py-2 rounded-lg ${filter === "all"
                 ? "bg-green-500 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } transition-colors`}
+              } transition-colors`}
           >
             All
           </button>
           <button
             onClick={() => setFilter("pending")}
-            className={`px-4 py-2 rounded-lg ${
-              filter === "pending"
+            className={`px-4 py-2 rounded-lg ${filter === "pending"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } transition-colors`}
+              } transition-colors`}
           >
             Pending
           </button>
           <button
             onClick={() => setFilter("accepted")}
-            className={`px-4 py-2 rounded-lg ${
-              filter === "accepted"
+            className={`px-4 py-2 rounded-lg ${filter === "accepted"
                 ? "bg-green-500 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } transition-colors`}
+              } transition-colors`}
           >
             Accepted
           </button>
           <button
             onClick={() => setFilter("completed")}
-            className={`px-4 py-2 rounded-lg ${
-              filter === "completed"
+            className={`px-4 py-2 rounded-lg ${filter === "completed"
                 ? "bg-green-500 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } transition-colors`}
+              } transition-colors`}
           >
             Completed
           </button>
           <button
             onClick={() => setFilter("rejected")}
-            className={`px-4 py-2 rounded-lg ${
-              filter === "rejected"
+            className={`px-4 py-2 rounded-lg ${filter === "rejected"
                 ? "bg-red-500 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } transition-colors`}
+              } transition-colors`}
           >
             Rejected
           </button>
           <button
             onClick={() => setFilter("cancelled")}
-            className={`px-4 py-2 rounded-lg ${
-              filter === "cancelled"
+            className={`px-4 py-2 rounded-lg ${filter === "cancelled"
                 ? "bg-red-500 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            } transition-colors`}
+              } transition-colors`}
           >
             Cancelled
           </button>
@@ -210,20 +206,28 @@ const OrdersPage = () => {
         <div className="space-y-4">
           {filteredOrders.map((order) => (
             <div key={order._id} className="glass p-4 rounded-xl">
-              <OrderItem order={order} />
-              <div className="mt-4 border-t border-gray-200 pt-4 flex justify-between items-center">
+              <OrderItem order={order} />              <div className="mt-4 border-t border-gray-200 pt-4 flex justify-between items-center">
                 <div className="text-sm text-gray-600">
                   Order placed on {formatDate(order.createdAt)}
                 </div>
                 <div className="flex gap-2">
-                  <Link
-                    to={`/messages/${order.consumer._id}`}
-                    className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1"
-                  >
-                    <FaComment />
-                    Messages
-                  </Link>
-                  
+                  {order.consumer && order.consumer._id ? (
+                    <Link
+                      to={`/messages/${order.consumer._id}`}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1"
+                    >
+                      <FaComment />
+                      Messages
+                    </Link>
+                  ) : (
+                    <button
+                      disabled
+                      className="px-3 py-1 bg-gray-400 text-white rounded-lg text-sm flex items-center gap-1 cursor-not-allowed"
+                    >
+                      <FaComment />
+                      No contact info
+                    </button>
+                  )}
                   {order.status === "pending" && (
                     <div className="flex gap-2">
                       <button
@@ -242,7 +246,7 @@ const OrdersPage = () => {
                       </button>
                     </div>
                   )}
-                  
+
                   {order.status === "accepted" && (
                     <div className="flex gap-2">
                       <button
@@ -263,7 +267,7 @@ const OrdersPage = () => {
                       )}
                     </div>
                   )}
-                  
+
                   <button
                     onClick={() => handleUpdateStatus(order)}
                     className="px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
@@ -290,11 +294,10 @@ const OrdersPage = () => {
 
       {showStatusModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Update Order Status</h3>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">            <h3 className="text-xl font-bold mb-4">Update Order Status</h3>
             <p className="mb-4">
-              Order #{selectedOrder._id.substring(0, 8)} for{" "}
-              {selectedOrder.consumer.name}
+              Order #{selectedOrder._id.substring(0, 8)}
+              {selectedOrder.consumer ? ` for ${selectedOrder.consumer.name}` : ''}
             </p>
             <div className="mb-4">
               <label
@@ -335,31 +338,29 @@ const OrdersPage = () => {
 
       {showDeliveryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Finalize Delivery Date</h3>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">            <h3 className="text-xl font-bold mb-4">Finalize Delivery Date</h3>
             <p className="mb-4">
-              Order #{selectedOrder._id.substring(0, 8)} for{" "}
-              {selectedOrder.consumer.name}
+              Order #{selectedOrder._id.substring(0, 8)}
+              {selectedOrder.consumer ? ` for ${selectedOrder.consumer.name}` : ''}
             </p>
-            
-            <div className="mb-4">
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Customer's Requested Date
-                </label>
-                <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                  {selectedOrder.deliveryDetails.requestedDate 
-                    ? formatDate(selectedOrder.deliveryDetails.requestedDate) 
-                    : "Not specified"}
-                </p>
-              </div>
-              
+
+            <div className="mb-4">              <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Customer's Requested Date
+              </label>
+              <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                {selectedOrder.deliveryDetails?.requestedDate
+                  ? formatDate(selectedOrder.deliveryDetails.requestedDate)
+                  : "Not specified"}
+              </p>
+            </div>
+
               <div className="mb-3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Customer's Requested Time
                 </label>
                 <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                  {selectedOrder.deliveryDetails.requestedTime || "Not specified"}
+                  {selectedOrder.deliveryDetails?.requestedTime || "Not specified"}
                 </p>
               </div>
             </div>

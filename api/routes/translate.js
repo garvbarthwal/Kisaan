@@ -33,20 +33,42 @@ router.post("/", async (req, res) => {
   if (!text) {
     return res.status(400).json({ error: "Text is required for translation" });
   }
-
   try {
-    const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-pro" });
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY not configured");
+    } const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      }
+    });
 
     const result = await model.generateContent(buildPrompt(text));
+
+    if (!result || !result.response) {
+      throw new Error("Empty response from Gemini API");
+    }
+
     const response = await result.response;
     const translatedText = response.text().trim();
 
     // Remove quotes, asterisks, markdown artifacts if any
     const cleanText = translatedText.replace(/^["'*]+|["'*]+$/g, "").trim();
 
-    res.json({ translated: cleanText });
+    res.json({ translated: cleanText || "Translation unavailable" });
   } catch (err) {
     console.error("Translation error:", err);
+
+    // Add fallback translation for common errors
+    if (err.message.includes("API key") ||
+      err.message.includes("quota") ||
+      err.message.includes("GEMINI_API_KEY")) {
+      return res.json({ translated: "अनुवाद सेवा अस्थायी रूप से उपलब्ध नहीं है। (Translation service temporarily unavailable.)" });
+    }
+
     res.status(500).json({
       error: "Translation failed",
       details: err.message,

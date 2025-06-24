@@ -7,7 +7,7 @@ import {
   markMessagesAsRead,
 } from "../redux/slices/messageSlice";
 import Loader from "../components/Loader";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 import {
   FaArrowLeft,
   FaPaperPlane,
@@ -83,7 +83,6 @@ const ConversationPage = () => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
-
   const handleTranslate = async (messageId, text) => {
     if (translations[messageId]) {
       setTranslations((prev) => ({
@@ -96,22 +95,39 @@ const ConversationPage = () => {
       return;
     }
 
+    // Show loading state
+    setTranslations((prev) => ({
+      ...prev,
+      [messageId]: {
+        translated: "अनुवाद हो रहा है... (Translating...)",
+        showOriginal: false,
+        loading: true
+      },
+    }));
+
     try {
       const res = await axios.post("/api/translate", { text });
-      setTranslations((prev) => ({
-        ...prev,
-        [messageId]: {
-          translated: res.data.translated,
-          showOriginal: false,
-        },
-      }));
+
+      if (res.data && res.data.translated) {
+        setTranslations((prev) => ({
+          ...prev,
+          [messageId]: {
+            translated: res.data.translated,
+            showOriginal: false,
+            loading: false
+          },
+        }));
+      } else {
+        throw new Error("Empty translation response");
+      }
     } catch (error) {
       console.error("Translation failed", error);
       setTranslations((prev) => ({
         ...prev,
         [messageId]: {
-          translated: "⚠️ Translation failed",
+          translated: "⚠️ अनुवाद विफल रहा। बाद में पुनः प्रयास करें। (Translation failed. Please try again later.)",
           showOriginal: false,
+          loading: false
         },
       }));
     }
@@ -153,30 +169,31 @@ const ConversationPage = () => {
                     className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[70%] rounded-lg p-3 relative ${
-                        isMe
+                      className={`max-w-[70%] rounded-lg p-3 relative ${isMe
                           ? "bg-green-500 text-white rounded-tr-none"
                           : "bg-white border border-gray-200 rounded-tl-none"
-                      }`}
+                        }`}
                     >
                       <p className="mb-1">
                         {t ? (t.showOriginal ? message.content : t.translated) : message.content}
-                      </p>
-                      <div className="flex justify-between items-center mt-1">
+                      </p>                      <div className="flex justify-between items-center mt-1">
                         <span
-                          className={`text-xs ${
-                            isMe ? "text-green-100" : "text-gray-500"
-                          }`}
+                          className={`text-xs ${isMe ? "text-green-100" : "text-gray-500"
+                            }`}
                         >
                           {formatTime(message.createdAt)}
                         </span>
                         {!isMe && (
                           <button
                             onClick={() => handleTranslate(message._id, message.content)}
-                            className="ml-2 text-xs text-blue-500 hover:underline flex items-center gap-1"
+                            className={`ml-2 text-xs ${t?.loading ? "text-gray-400" : "text-blue-500 hover:underline"} flex items-center gap-1`}
+                            disabled={t?.loading}
                           >
-                            <FaGlobe />
-                            {t ? (t.showOriginal ? "Show Hindi" : "Show Original") : "हिंदी में देखे"}
+                            <FaGlobe className={t?.loading ? "animate-spin" : ""} />
+                            {t ? (
+                              t.loading ? "अनुवाद हो रहा है..." :
+                                t.showOriginal ? "Show Hindi" : "Show Original"
+                            ) : "हिंदी में देखे"}
                           </button>
                         )}
                       </div>
@@ -206,11 +223,10 @@ const ConversationPage = () => {
             <button
               type="button"
               onClick={handleVoiceInput}
-              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${
-                isListening
+              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${isListening
                   ? "bg-red-100 text-red-600 hover:bg-red-200"
                   : "bg-gray-100 text-gray-500 hover:bg-green-100"
-              }`}
+                }`}
               title={isListening ? "Stop Listening" : "Start Voice Input"}
             >
               {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}

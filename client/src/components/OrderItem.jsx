@@ -41,26 +41,26 @@ const OrderItem = ({ order }) => {
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
-    
+
     try {
       // For ISO date strings that end with Z (UTC/Zulu time)
       if (typeof dateString === 'string' && dateString.endsWith('Z')) {
         // Extract just the date part from the ISO string
         const datePart = dateString.split('T')[0];
         const [year, month, day] = datePart.split('-').map(Number);
-        
+
         // Create a date using local timezone (no UTC conversion)
         return `${day} ${getMonthName(month)} ${year}`;
       }
-      
+
       // For other date formats
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
         console.error("Invalid date:", dateString);
         return "Invalid date";
       }
-      
+
       const options = { year: "numeric", month: "short", day: "numeric" };
       return date.toLocaleDateString(undefined, options);
     } catch (error) {
@@ -68,11 +68,11 @@ const OrderItem = ({ order }) => {
       return "Error formatting date";
     }
   };
-  
+
   // Helper function to get month name
   const getMonthName = (monthNum) => {
     const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
     return months[monthNum - 1]; // monthNum is 1-indexed
@@ -100,17 +100,17 @@ const OrderItem = ({ order }) => {
   const canCancelOrder = () => {
     if (user.role !== "consumer") return false;
     if (order.status !== "accepted" && order.status !== "pending") return false;
-    
+
     // For accepted orders, check if within 2 hours
     if (order.status === "accepted") {
       const orderTime = new Date(order.createdAt);
       const currentTime = new Date();
       const timeDifference = currentTime - orderTime;
       const twoHoursInMs = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-      
+
       return timeDifference <= twoHoursInMs;
     }
-    
+
     // Pending orders can always be cancelled
     return true;
   };
@@ -120,6 +120,14 @@ const OrderItem = ({ order }) => {
       dispatch(cancelOrder(order._id));
     }
   };
+  // If order data is incomplete or missing, show a message
+  if (!order || !order._id) {
+    return (
+      <div className="card p-4 mb-4 bg-red-50">
+        <div className="text-red-600 font-medium">Error: Invalid order data</div>
+      </div>
+    );
+  }
 
   return (
     <div className="card p-4 mb-4">
@@ -136,7 +144,7 @@ const OrderItem = ({ order }) => {
                 <span>{formatDate(order.createdAt)}</span>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2 mt-2 md:mt-0">
               <span className="text-gray-500 text-sm">Status:</span>
               <span className={`badge ${getStatusBadgeClass(order.status)}`}>
@@ -148,7 +156,7 @@ const OrderItem = ({ order }) => {
           <div className="mb-3">
             <div className="flex items-center space-x-2 mb-1">
               <span className="text-gray-500 text-sm">Customer:</span>
-              <span className="font-medium">{order.consumer.name}</span>
+              <span className="font-medium">{order.consumer?.name || 'Unknown'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-gray-500 text-sm">Order Type:</span>
@@ -183,17 +191,19 @@ const OrderItem = ({ order }) => {
                 </div>
               )}
             </div>
-          )}
-
-          <div className="mb-3">
+          )}          <div className="mb-3">
             <div className="text-sm font-medium mb-2">Order Items:</div>
             <div className="space-y-1">
-              {order.items.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span>{item.product.name} x {item.quantity}</span>
-                  <span className="font-medium">₨{(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
+              {order.items && order.items.length > 0 ? (
+                order.items.map((item, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span>{item.product?.name || 'Unknown product'} x {item.quantity || 0}</span>
+                    <span className="font-medium">₨{((item.price || 0) * (item.quantity || 0)).toFixed(2)}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-500">No items in this order</div>
+              )}
             </div>
           </div>
 
@@ -203,21 +213,21 @@ const OrderItem = ({ order }) => {
                 <span className="font-medium">Customer Notes:</span> {order.notes}
               </p>
             </div>
-          )}
-
-          <div className="flex justify-between items-center">
+          )}          <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              Payment: {order.paymentMethod?.charAt(0).toUpperCase() + order.paymentMethod?.slice(1) || "Not specified"}
+              Payment: {order.paymentMethod
+                ? order.paymentMethod.charAt(0).toUpperCase() + order.paymentMethod.slice(1)
+                : "Not specified"}
             </div>
             <div className="flex items-center gap-3">
               <div className="text-lg font-bold text-green-600">
-                Total: ₨{order.totalAmount.toFixed(2)}
+                Total: ₨{(order.totalAmount || 0).toFixed(2)}
               </div>
               {canCancelOrder() && (
                 <button
                   onClick={handleCancelOrder}
-                  title={order.status === "pending" 
-                    ? "Pending orders can be cancelled anytime" 
+                  title={order.status === "pending"
+                    ? "Pending orders can be cancelled anytime"
                     : "Accepted orders can be cancelled within 2 hours of placement"}
                   className="bg-red-100 hover:bg-red-200 text-red-600 text-xs px-2 py-1 rounded transition-colors"
                 >
@@ -230,8 +240,8 @@ const OrderItem = ({ order }) => {
           {/* Cancel order info text */}
           {canCancelOrder() && (
             <p className="text-xs text-gray-500 mt-2 text-right">
-              {order.status === "pending" 
-                ? "Pending orders can be cancelled anytime" 
+              {order.status === "pending"
+                ? "Pending orders can be cancelled anytime"
                 : "Accepted orders can be cancelled within 2 hours of placement"}
             </p>
           )}
