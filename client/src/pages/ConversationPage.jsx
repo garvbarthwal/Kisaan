@@ -176,7 +176,7 @@ const ConversationPage = () => {
                             className="ml-2 text-xs text-blue-500 hover:underline flex items-center gap-1"
                           >
                             <FaGlobe />
-                            {t ? (t.showOriginal ? "Show Hindi" : "Show Original") : "Translate"}
+                            {t ? (t.showOriginal ? "Show Hindi" : "Show Original") : "हिंदी में देखे"}
                           </button>
                         )}
                       </div>
