@@ -4,6 +4,14 @@ import { FaLeaf, FaEnvelope, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
+  // Map link text to their correct paths
+  const linkMap = {
+    Home: "/",
+    Products: "/products",
+    Farmers: "/farmers",
+    "About Us": "/about",
+  };
+
   return (
     <footer className="bg-gray-900 text-white pt-12 pb-6">
       <div className="container mx-auto px-4">
@@ -24,10 +32,10 @@ const Footer = () => {
               Quick Links
             </h3>
             <ul className="space-y-2">
-              {["Home", "Products", "Farmers", "About Us"].map((text, i) => (
+              {Object.keys(linkMap).map((text, i) => (
                 <li key={i}>
                   <Link
-                    to={`/${text.toLowerCase().replace(" ", "")}`}
+                    to={linkMap[text]}
                     className="text-gray-400 hover:text-green-400 transition"
                   >
                     {text}
