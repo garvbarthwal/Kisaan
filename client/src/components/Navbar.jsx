@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/slices/authSlice";
-import { resetOrderState } from "../redux/slices/orderSlice";
+import { resetOrderState, getFarmerOrders } from "../redux/slices/orderSlice";
 import { toast } from "react-toastify";
 import {
   FaLeaf,
@@ -26,9 +26,30 @@ const Navbar = () => {
   const { cartItems } = useSelector((state) => state.cart);
   const { farmerOrders } = useSelector((state) => state.orders);
 
+  // Auto-refresh farmer orders every 30 seconds
+  useEffect(() => {
+    if (isAuthenticated && user?.role === "farmer") {
+      // Fetch orders immediately on mount
+      dispatch(getFarmerOrders());
+
+      // Set up polling interval
+      const orderPollInterval = setInterval(() => {
+        dispatch(getFarmerOrders());
+      }, 30000); // Poll every 30 seconds
+
+      // Clean up on unmount
+      return () => clearInterval(orderPollInterval);
+    }
+  }, [dispatch, isAuthenticated, user]);
+
   // Calculate pending orders for farmers
-  const pendingOrdersCount = user?.role === "farmer" 
-    ? farmerOrders.filter(order => order.status === "pending").length 
+  const pendingOrdersCount = user?.role === "farmer"
+    ? farmerOrders.filter(order =>
+      order.status === "pending" ||
+      (order.status === "accepted" &&
+        order.deliveryDetails &&
+        !order.deliveryDetails.isDateFinalized)
+    ).length
     : 0;
 
   const toggleMenu = () => {
@@ -97,7 +118,7 @@ const Navbar = () => {
                 >
                   Orders
                 </Link>
-                <button 
+                <button
                   onClick={handleCartClick}
                   className="relative p-2 text-gray-700 hover:text-green-500 transition-colors"
                   aria-label="Shopping Cart"
@@ -290,7 +311,7 @@ const Navbar = () => {
                   <span>Cart ({cartItems.length})</span>
                 </button>
               )}
-              
+
               {isAuthenticated && user?.role === "farmer" && (
                 <Link
                   to="/farmer/orders"
@@ -305,7 +326,7 @@ const Navbar = () => {
                   )}
                 </Link>
               )}
-              
+
               {isAuthenticated ? (
                 <>
                   {user?.role === "admin" && (

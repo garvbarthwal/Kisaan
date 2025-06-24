@@ -115,6 +115,22 @@ const messageSlice = createSlice({
         } else {
           state.messages[receiverId] = [formattedMessage]
         }
+
+        // Update the conversations list with the new message
+        const conversationIndex = state.conversations.findIndex(
+          conv => conv.user._id === receiverId || conv._id === receiverId
+        )
+
+        if (conversationIndex !== -1) {
+          // Update existing conversation with latest message
+          state.conversations[conversationIndex].latestMessage = action.payload.data
+          state.conversations[conversationIndex].updatedAt = new Date().toISOString()
+
+          // Move this conversation to the top
+          const updatedConversation = state.conversations[conversationIndex]
+          state.conversations.splice(conversationIndex, 1)
+          state.conversations.unshift(updatedConversation)
+        }
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.loading = false
@@ -128,7 +144,30 @@ const messageSlice = createSlice({
       })
       .addCase(getConversations.fulfilled, (state, action) => {
         state.loading = false
-        state.conversations = action.payload.data
+
+        // Update conversations with new data, preserving any local state we need
+        const newConversations = action.payload.data
+
+        // Sort conversations by most recent first
+        state.conversations = newConversations.sort((a, b) => {
+          return new Date(b.updatedAt) - new Date(a.updatedAt)
+        })
+
+        // Update any currently loaded messages with new unread counts
+        if (state.currentConversation) {
+          const currentConv = newConversations.find(
+            conv => conv.user._id === state.currentConversation
+          )
+          if (currentConv) {
+            // Update the current conversation's unread count
+            const index = state.conversations.findIndex(
+              conv => conv.user._id === state.currentConversation
+            )
+            if (index !== -1) {
+              state.conversations[index].unreadCount = currentConv.unreadCount
+            }
+          }
+        }
       })
       .addCase(getConversations.rejected, (state, action) => {
         state.loading = false

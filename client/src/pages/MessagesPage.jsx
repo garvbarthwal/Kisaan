@@ -10,7 +10,16 @@ const MessagesPage = () => {
   const { conversations, loading } = useSelector((state) => state.messages);
 
   useEffect(() => {
+    // Fetch conversations initially
     dispatch(getConversations());
+
+    // Set up polling interval for real-time updates
+    const conversationPollInterval = setInterval(() => {
+      dispatch(getConversations());
+    }, 15000); // Poll every 15 seconds
+
+    // Clean up on unmount
+    return () => clearInterval(conversationPollInterval);
   }, [dispatch]);
 
   if (loading) {
@@ -35,7 +44,8 @@ const MessagesPage = () => {
           <FaComments className="text-green-500 text-5xl mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">No Messages Yet</h3>
           <p className="text-gray-600">
-            You don't have any conversations yet. Start by messaging a farmer or responding to customer inquiries.
+            You don't have any conversations yet. Start by messaging a farmer or
+            responding to customer inquiries.
           </p>
         </div>
       )}

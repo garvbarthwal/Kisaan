@@ -12,24 +12,32 @@ const OrdersPage = () => {
 
   useEffect(() => {
     dispatch(getConsumerOrders());
+
+    // Set up polling interval for real-time order updates
+    const orderPollInterval = setInterval(() => {
+      dispatch(getConsumerOrders());
+    }, 20000); // Poll every 20 seconds
+
+    // Clean up on unmount
+    return () => clearInterval(orderPollInterval);
   }, [dispatch]);
 
   const filteredOrders = filter === "all"
     ? orders
     : filter === "pending"
       ? orders.filter(
-          (order) => 
-            order.status === "pending" || 
-            (order.status === "accepted" && 
-             order.deliveryDetails && 
-             !order.deliveryDetails.isDateFinalized)
-        )
+        (order) =>
+          order.status === "pending" ||
+          (order.status === "accepted" &&
+            order.deliveryDetails &&
+            !order.deliveryDetails.isDateFinalized)
+      )
       : filter === "accepted"
         ? orders.filter(
-            (order) => 
-              order.status === "accepted" && 
-              (!order.deliveryDetails || order.deliveryDetails.isDateFinalized)
-          )
+          (order) =>
+            order.status === "accepted" &&
+            (!order.deliveryDetails || order.deliveryDetails.isDateFinalized)
+        )
         : orders.filter((order) => order.status === filter);
 
   if (loading) {

@@ -31,6 +31,14 @@ const OrdersPage = () => {
   useEffect(() => {
     console.log("Dispatching getFarmerOrders in OrdersPage");
     dispatch(getFarmerOrders());
+
+    // Set up polling interval for real-time order updates
+    const orderPollInterval = setInterval(() => {
+      dispatch(getFarmerOrders());
+    }, 20000); // Poll every 20 seconds
+
+    // Clean up on unmount
+    return () => clearInterval(orderPollInterval);
   }, [dispatch]);
 
   useEffect(() => {
@@ -148,8 +156,8 @@ const OrdersPage = () => {
           <button
             onClick={() => setFilter("all")}
             className={`px-4 py-2 rounded-lg ${filter === "all"
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-green-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               } transition-colors`}
           >
             All
@@ -157,8 +165,8 @@ const OrdersPage = () => {
           <button
             onClick={() => setFilter("pending")}
             className={`px-4 py-2 rounded-lg ${filter === "pending"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               } transition-colors`}
           >
             Pending
@@ -166,8 +174,8 @@ const OrdersPage = () => {
           <button
             onClick={() => setFilter("accepted")}
             className={`px-4 py-2 rounded-lg ${filter === "accepted"
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-green-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               } transition-colors`}
           >
             Accepted
@@ -175,8 +183,8 @@ const OrdersPage = () => {
           <button
             onClick={() => setFilter("completed")}
             className={`px-4 py-2 rounded-lg ${filter === "completed"
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-green-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               } transition-colors`}
           >
             Completed
@@ -184,8 +192,8 @@ const OrdersPage = () => {
           <button
             onClick={() => setFilter("rejected")}
             className={`px-4 py-2 rounded-lg ${filter === "rejected"
-                ? "bg-red-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-red-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               } transition-colors`}
           >
             Rejected
@@ -193,8 +201,8 @@ const OrdersPage = () => {
           <button
             onClick={() => setFilter("cancelled")}
             className={`px-4 py-2 rounded-lg ${filter === "cancelled"
-                ? "bg-red-500 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-red-500 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               } transition-colors`}
           >
             Cancelled

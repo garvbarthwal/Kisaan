@@ -32,8 +32,18 @@ const ConversationPage = () => {
   const conversationMessages = messages[userId] || [];
 
   useEffect(() => {
+    // Fetch messages and mark as read initially
     dispatch(getConversationMessages(userId));
     dispatch(markMessagesAsRead(userId));
+
+    // Set up polling interval for real-time updates
+    const messagesPollInterval = setInterval(() => {
+      dispatch(getConversationMessages(userId));
+      dispatch(markMessagesAsRead(userId));
+    }, 10000); // Poll every 10 seconds
+
+    // Clean up on unmount
+    return () => clearInterval(messagesPollInterval);
   }, [dispatch, userId]);
 
   useEffect(() => {
