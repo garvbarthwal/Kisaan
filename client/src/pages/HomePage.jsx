@@ -126,6 +126,34 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Browse by Category Section */}
+      <section className="py-24 bg-gradient-to-b from-white to-green-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-16">
+            Browse by Category
+          </h2>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {categories.map((category) => (
+              <Link
+                key={category._id}
+                to={`/products?category=${category._id}`}
+                className="glass p-6 rounded-xl text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col items-center"
+              >
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  {category.icon ? (
+                    <span className="text-2xl text-green-600">{category.icon}</span>
+                  ) : (
+                    <FaLeaf className="text-green-500 text-2xl" />
+                  )}
+                </div>
+                <h3 className="font-medium text-gray-900">{category.name}</h3>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Featured Products Section */}
       <section className="py-24 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
