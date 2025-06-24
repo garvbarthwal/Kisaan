@@ -23,7 +23,7 @@ const ConversationPage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
-  const [translations, setTranslations] = useState({}); 
+  const [translations, setTranslations] = useState({});
 
   const { messages, loading } = useSelector((state) => state.messages);
   const { user } = useSelector((state) => state.auth);
@@ -152,31 +152,28 @@ const ConversationPage = () => {
                     className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[70%] rounded-lg p-3 relative ${
-                        isMe
+                      className={`max-w-[70%] rounded-lg p-3 relative ${isMe
                           ? "bg-green-500 text-white rounded-tr-none"
                           : "bg-white border border-gray-200 rounded-tl-none"
-                      }`}
+                        }`}
                     >
                       <p className="mb-1">
                         {t ? (t.showOriginal ? message.content : t.translated) : message.content}
                       </p>
                       <div className="flex justify-between items-center mt-1">
                         <span
-                          className={`text-xs ${
-                            isMe ? "text-green-100" : "text-gray-500"
-                          }`}
+                          className={`text-xs ${isMe ? "text-green-100" : "text-gray-500"
+                            }`}
                         >
                           {formatTime(message.createdAt)}
                         </span>
-                        {!isMe && (
-                          <button
-                            onClick={() => handleTranslate(message._id, message.content)}
-                            className="ml-2 text-xs text-blue-500 hover:underline flex items-center gap-1"
-                          >
-                            <FaGlobe />
-                            {t ? (t.showOriginal ? "Show Hindi" : "Show Original") : "Translate"}
-                          </button>
+                        {!isMe && (<button
+                          onClick={() => handleTranslate(message._id, message.content)}
+                          className="ml-2 text-xs text-blue-500 hover:underline flex items-center gap-1"
+                        >
+                          <FaGlobe />
+                          {t ? (t.showOriginal ? "हिंदी में देखें" : "Show Original") : "Translate"}
+                        </button>
                         )}
                       </div>
                     </div>
@@ -205,11 +202,10 @@ const ConversationPage = () => {
             <button
               type="button"
               onClick={handleVoiceInput}
-              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${
-                isListening
+              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-colors ${isListening
                   ? "bg-red-100 text-red-600 hover:bg-red-200"
                   : "bg-gray-100 text-gray-500 hover:bg-green-100"
-              }`}
+                }`}
               title={isListening ? "Stop Listening" : "Start Voice Input"}
             >
               {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}

@@ -205,11 +205,10 @@ const ConversationPage = () => {
                             className={`ml-2 text-xs ${t?.loading ? "text-gray-400" : "text-blue-500 hover:underline"} flex items-center gap-1`}
                             disabled={t?.loading}
                           >
-                            <FaGlobe className={t?.loading ? "animate-spin" : ""} />
-                            {t ? (
+                            <FaGlobe className={t?.loading ? "animate-spin" : ""} />                            {t ? (
                               t.loading ? "अनुवाद हो रहा है..." :
-                                t.showOriginal ? "Show Hindi" : "Show Original"
-                            ) : "हिंदी में देखे"}
+                                t.showOriginal ? "हिंदी में देखें" : "Show Original"
+                            ) : "हिंदी में देखें"}
                           </button>
                         )}
                       </div>
