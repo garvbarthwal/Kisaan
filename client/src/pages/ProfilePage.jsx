@@ -63,13 +63,13 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState("general");
   const [farmImagePreviewUrls, setFarmImagePreviewUrls] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
-
   // Upload progress states for farm images
   const [farmImageUploadState, setFarmImageUploadState] = useState({
     isUploading: false,
     progress: 0,
     uploadComplete: false,
-    uploadError: null
+    uploadError: null,
+    fileCount: 0
   });
 
   useEffect(() => {
@@ -255,17 +255,14 @@ const ProfilePage = () => {
         // Handle validation error - you might want to add error state for farm images
         console.error('Farm image validation failed:', validation.errors);
         return;
-      }
-
-      // Set upload state
+      }      // Set upload state
       setFarmImageUploadState(prev => ({
         ...prev,
         isUploading: true,
         progress: 0,
-        uploadError: null
-      }));
-
-      // Upload images immediately to Cloudinary
+        uploadError: null,
+        fileCount: files.length
+      }));      // Upload images immediately to Cloudinary
       const imageUrls = await uploadProductImages(files, {
         validate: false, // Already validated
         onUploadStart: () => {
@@ -273,7 +270,8 @@ const ProfilePage = () => {
             ...prev,
             isUploading: true,
             progress: 0,
-            uploadError: null
+            uploadError: null,
+            fileCount: files.length
           }));
         },
         onProgress: (progress) => {
@@ -776,17 +774,15 @@ const ProfilePage = () => {
                     </label>
                   </div>
                 </div>
-              </div>
-
-              {/* Upload Progress Component */}
+              </div>              {/* Upload Progress Component */}
               <UploadProgress
                 isUploading={farmImageUploadState.isUploading}
                 progress={farmImageUploadState.progress}
                 uploadComplete={farmImageUploadState.uploadComplete}
                 uploadError={farmImageUploadState.uploadError}
-                fileCount={farmerForm.farmImageFiles?.length || 0}
+                fileCount={farmImageUploadState.fileCount}
                 className="mt-4"
-              />              {/* Image Preview Grid */}
+              />{/* Image Preview Grid */}
               {farmImagePreviewUrls.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">

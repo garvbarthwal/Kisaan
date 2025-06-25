@@ -33,16 +33,15 @@ const UploadProgress = ({
 
                 {/* Status Content */}
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium text-gray-900">
-                            {uploadError ? (
-                                "Upload Failed"
-                            ) : uploadComplete ? (
-                                `${fileCount} image${fileCount !== 1 ? 's' : ''} uploaded successfully`
-                            ) : (
-                                `Uploading ${fileCount} image${fileCount !== 1 ? 's' : ''}...`
-                            )}
-                        </p>
+                    <div className="flex items-center justify-between mb-1">                        <p className="text-sm font-medium text-gray-900">
+                        {uploadError ? (
+                            "Upload Failed"
+                        ) : uploadComplete ? (
+                            fileCount > 0 ? `${fileCount} image${fileCount !== 1 ? 's' : ''} uploaded successfully` : "Images uploaded successfully"
+                        ) : (
+                            "Uploading..."
+                        )}
+                    </p>
                         {isUploading && (
                             <span className="text-sm text-gray-500">{progress}%</span>
                         )}
