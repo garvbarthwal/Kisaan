@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import { placeholder } from "../assets";
 import { filterValidImageUrls } from "../utils/imageCleanup";
+import { isValidObjectId } from "../utils/objectId";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -34,12 +35,17 @@ const ProductDetailPage = () => {
   const { cartItems, farmerId } = useSelector((state) => state.cart);
 
   useEffect(() => {
-    dispatch(getProductDetails(id));
+    if (isValidObjectId(id)) {
+      dispatch(getProductDetails(id));
+    } else {
+      // Optionally, show an error or redirect
+      navigate("/not-found");
+    }
 
     return () => {
       dispatch(clearProductDetails());
     };
-  }, [dispatch, id]);
+  }, [dispatch, id, navigate]);
 
   const handleQuantityChange = (e) => {
     const value = Number.parseInt(e.target.value);

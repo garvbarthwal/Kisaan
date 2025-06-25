@@ -15,6 +15,7 @@ import {
   FaEye,
 } from "react-icons/fa";
 import { filterValidImageUrls } from "../../utils/imageCleanup";
+import { isValidObjectId } from "../../utils/objectId";
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
@@ -69,7 +70,7 @@ const ProductsPage = () => {
     setShowDeleteModal(true);
   };
   const confirmDelete = () => {
-    if (productToDelete) {
+    if (productToDelete && isValidObjectId(productToDelete._id)) {
       dispatch(deleteProduct(productToDelete._id))
         .unwrap()
         .then(() => {
@@ -78,10 +79,12 @@ const ProductsPage = () => {
         })
         .catch((error) => {
           console.error("Error deleting product:", error);
-          // We still close the modal but user will see error toast from productSlice
           setShowDeleteModal(false);
           setProductToDelete(null);
         });
+    } else {
+      setShowDeleteModal(false);
+      setProductToDelete(null);
     }
   };
 

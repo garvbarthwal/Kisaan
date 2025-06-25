@@ -16,6 +16,7 @@ import {
   FaComment,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { isValidObjectId } from "../../utils/objectId";
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
@@ -72,7 +73,9 @@ const OrdersPage = () => {
   };
 
   const handleQuickAction = (order, status) => {
-    dispatch(updateOrderStatus({ id: order._id, status }));
+    if (isValidObjectId(order._id)) {
+      dispatch(updateOrderStatus({ id: order._id, status }));
+    }
   };
 
   const handleStatusUpdate = () => {
