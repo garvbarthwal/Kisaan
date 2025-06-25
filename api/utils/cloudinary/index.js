@@ -65,6 +65,24 @@ const getProfileStorage = () => {
     });
 };
 
+// Function to get farm storage (lazy initialization)
+const getFarmStorage = () => {
+    const cloudinary = getCloudinary();
+    return new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+            folder: 'kisaan/farms',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+            transformation: [
+                { width: 1200, height: 800, crop: 'limit', quality: 'auto:good' },
+                { fetch_format: 'auto' }
+            ],
+            format: 'webp', // Convert all images to WebP for better performance
+            resource_type: 'auto' // Auto-detect resource type
+        }
+    });
+};
+
 // Create upload middleware functions (lazy initialization)
 const uploadProductImages = (req, res, callback) => {
     const upload = multer({
@@ -88,6 +106,23 @@ const uploadProfileImage = (req, res, callback) => {
         storage: getProfileStorage(),
         limits: { fileSize: 2 * 1024 * 1024 } // 2MB max file size
     }).single('image');
+
+    upload(req, res, callback);
+};
+
+const uploadFarmImages = (req, res, callback) => {
+    const upload = multer({
+        storage: getFarmStorage(),
+        limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max file size
+        fileFilter: (req, file, cb) => {
+            // Check if the file is an image
+            if (file.mimetype.startsWith('image/')) {
+                cb(null, true);
+            } else {
+                cb(new Error('Only image files are allowed!'), false);
+            }
+        }
+    }).array('images', 10); // Max 10 farm images
 
     upload(req, res, callback);
 };
@@ -156,6 +191,7 @@ module.exports = {
     cloudinary: getCloudinary,
     uploadProductImages,
     uploadProfileImage,
+    uploadFarmImages,
     deleteImage,
     deleteMultipleImages,
     getPublicIdFromUrl

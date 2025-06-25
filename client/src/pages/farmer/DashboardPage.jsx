@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getFarmerProducts } from "../../redux/slices/productSlice";
 import { getFarmerOrders } from "../../redux/slices/orderSlice";
 import { getConversations } from "../../redux/slices/messageSlice";
+import { getMyFarmerProfile } from "../../redux/slices/farmerSlice";
 import Loader from "../../components/Loader";
 import {
   FaBox,
@@ -15,8 +16,26 @@ import {
   FaBell,
   FaClipboardList,
   FaShippingFast,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import { updateOrderStatus } from "../../redux/slices/orderSlice";
+
+// Utility function to check if farmer profile is complete
+const isFarmerProfileComplete = (profile) => {
+  if (!profile) return false;
+
+  // Check if farmer has set order options (pickup or delivery)
+  const hasOrderOptions = profile.acceptsPickup || profile.acceptsDelivery;
+
+  // Check if farmer has business hours set
+  const hasBusinessHours =
+    profile.businessHours &&
+    Object.values(profile.businessHours).some(
+      (day) => day && day.open && day.close && day.open.trim() !== "" && day.close.trim() !== ""
+    );
+
+  return hasOrderOptions && hasBusinessHours;
+};
 
 const DashboardPage = () => {
   const dispatch = useDispatch();
@@ -25,14 +44,17 @@ const DashboardPage = () => {
   );
   const { farmerOrders, loading: ordersLoading } = useSelector(
     (state) => state.orders
-  );
-  const { conversations, loading: messagesLoading } = useSelector(
+  ); const { conversations, loading: messagesLoading } = useSelector(
     (state) => state.messages
   );
-  const { user } = useSelector((state) => state.auth); useEffect(() => {
+  const { user } = useSelector((state) => state.auth);
+  const { myFarmerProfile, loading: profileLoading } = useSelector((state) => state.farmers);
+
+  useEffect(() => {
     dispatch(getFarmerProducts());
     dispatch(getFarmerOrders());
     dispatch(getConversations());
+    dispatch(getMyFarmerProfile());
   }, [dispatch]);
 
   const orderCounts = {
@@ -76,7 +98,9 @@ const DashboardPage = () => {
       .filter((order) => order.status === "completed")
       .reduce((total, order) => total + order.totalAmount, 0);
 
-  if (productsLoading || ordersLoading || messagesLoading) {
+  const profileIncomplete = !profileLoading && !isFarmerProfileComplete(myFarmerProfile);
+
+  if (productsLoading || ordersLoading || messagesLoading || profileLoading) {
     return <Loader />;
   }
 
@@ -94,7 +118,29 @@ const DashboardPage = () => {
           <FaPlus />
           <span>Add New Product</span>
         </Link>
-      </div>
+      </div>      {/* Profile Incomplete Warning */}
+      {profileIncomplete && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded-md">
+          <div className="flex items-center">
+            <FaExclamationTriangle className="text-yellow-500 h-6 w-6 mr-3" />
+            <div>
+              <p className="text-yellow-800 font-semibold">
+                Your profile is incomplete
+              </p>
+              <p className="text-yellow-700">
+                To appear in farmer listings and receive orders, you need to set up your business hours and order options (pickup/delivery).{" "}
+                <Link
+                  to="/farmer/profile"
+                  className="font-semibold text-yellow-800 hover:underline"
+                >
+                  Complete your profile
+                </Link>{" "}
+                to unlock all features.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
@@ -224,11 +270,11 @@ const DashboardPage = () => {
                     <td className="text-center py-3">
                       <span
                         className={`badge ${order.status === "pending" ||
-                            (order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized)
-                            ? "badge-blue"
-                            : order.status === "accepted" || order.status === "completed"
-                              ? "badge-green"
-                              : "badge-red"
+                          (order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized)
+                          ? "badge-blue"
+                          : order.status === "accepted" || order.status === "completed"
+                            ? "badge-green"
+                            : "badge-red"
                           }`}
                       >
                         {order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized

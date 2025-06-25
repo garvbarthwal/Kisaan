@@ -6,15 +6,28 @@ const FarmerProfile = require("../models/FarmerProfileModel");
 // @access  Public
 exports.getAllFarmers = async (req, res) => {
   try {
+    console.log("Fetching all farmers with profiles...");
     const farmers = await User.find({ role: "farmer" }).select("-password");
 
+    // Get farmer profiles for each farmer
+    const farmersWithProfiles = await Promise.all(
+      farmers.map(async (farmer) => {
+        const farmerProfile = await FarmerProfile.findOne({ user: farmer._id });
+        return {
+          ...farmer.toObject(),
+          farmerProfile: farmerProfile || null,
+        };
+      })
+    );
+
+    console.log(`Returning ${farmersWithProfiles.length} farmers with profiles`);
     res.json({
       success: true,
-      count: farmers.length,
-      data: farmers,
+      count: farmersWithProfiles.length,
+      data: farmersWithProfiles,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching farmers:", error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
@@ -39,12 +52,39 @@ exports.getFarmerProfile = async (req, res) => {
 
     const farmerProfile = await FarmerProfile.findOne({ user: req.params.id });
 
+    // Use consistent data structure with getAllFarmers
     res.json({
       success: true,
       data: {
-        farmer,
-        profile: farmerProfile || {},
+        ...farmer.toObject(),
+        farmerProfile: farmerProfile || null,
       },
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Get current user's farmer profile
+// @route   GET /api/users/farmers/my-profile
+// @access  Private (Farmer only)
+exports.getMyFarmerProfile = async (req, res) => {
+  try {
+    const farmerProfile = await FarmerProfile.findOne({ user: req.user._id });
+
+    if (!farmerProfile) {
+      return res.json({
+        success: true,
+        data: null,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: farmerProfile,
     });
   } catch (error) {
     console.error(error);
@@ -59,6 +99,9 @@ exports.getFarmerProfile = async (req, res) => {
 // @access  Private (Farmer only)
 exports.updateFarmerProfile = async (req, res) => {
   try {
+    console.log("Updating farmer profile for user:", req.user._id);
+    console.log("Profile data received:", JSON.stringify(req.body, null, 2));
+
     const {
       farmName,
       description,
@@ -89,21 +132,25 @@ exports.updateFarmerProfile = async (req, res) => {
     let farmerProfile = await FarmerProfile.findOne({ user: req.user._id });
 
     if (farmerProfile) {
+      console.log("Updating existing farmer profile:", farmerProfile._id);
       farmerProfile = await FarmerProfile.findOneAndUpdate(
         { user: req.user._id },
         { $set: profileFields },
-        { new: true }
+        { new: true, runValidators: true }
       );
     } else {
+      console.log("Creating new farmer profile");
       farmerProfile = await FarmerProfile.create(profileFields);
     }
+
+    console.log("Farmer profile saved successfully:", farmerProfile._id);
 
     res.json({
       success: true,
       data: farmerProfile,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error updating farmer profile:", error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });

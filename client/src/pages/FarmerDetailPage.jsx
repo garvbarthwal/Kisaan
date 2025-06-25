@@ -35,8 +35,8 @@ const FarmerDetailPage = () => {
     (state) => state.products
   );
   const { isAuthenticated, user } = useSelector((state) => state.auth);
-
   useEffect(() => {
+    // Always fetch fresh data when the ID changes
     dispatch(getFarmerProfile(id));
     dispatch(getProducts({ farmer: id }));
 
@@ -70,9 +70,7 @@ const FarmerDetailPage = () => {
 
   if (loading) {
     return <Loader />;
-  }
-
-  if (!farmerProfile) {
+  } if (!farmerProfile) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="bg-yellow-100 text-yellow-800 p-4 rounded-lg">
@@ -81,7 +79,6 @@ const FarmerDetailPage = () => {
       </div>
     );
   }
-
   const {
     name,
     email,
@@ -190,18 +187,49 @@ const FarmerDetailPage = () => {
                   </div>
                 </form>
               </div>
+            )}            {profile && profile.description && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">About the Farm</h2>
+                <p className="text-gray-700 mb-6">{profile.description}</p>
+              </div>
             )}
 
-            <div>
-              <h2 className="text-2xl font-bold mb-4">About the Farm</h2>
-              {profile && profile.description ? (
-                <p className="text-gray-700 mb-6">{profile.description}</p>
-              ) : (
-                <p className="text-gray-500 italic mb-6">
-                  No farm description available.
+            {/* Farm Images Gallery */}
+            {profile && profile.farmImages && profile.farmImages.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">
+                  Farm Gallery
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {profile.farmImages.map((imageUrl, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square w-full overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
+                        <img
+                          src={imageUrl || "/placeholder.svg"}
+                          alt={`${profile.farmName || name} farm image ${index + 1}`}
+                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105 cursor-pointer"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/placeholder.svg";
+                          }}
+                          onClick={() => {
+                            // You can add a modal or lightbox functionality here if needed
+                            window.open(imageUrl, '_blank');
+                          }}
+                        />
+                      </div>
+                      {/* Image index indicator */}
+                      <div className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-1.5 py-0.5 rounded">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Click on images to view them in full size
                 </p>
-              )}
-            </div>
+              </div>
+            )}
 
             {profile && profile.farmingPractices && profile.farmingPractices.length > 0 && (
               <div className="mb-6">
@@ -219,17 +247,15 @@ const FarmerDetailPage = () => {
                   ))}
                 </div>
               </div>
-            )}
-
-            {profile && (profile.facebook || profile.instagram || profile.twitter) && (
+            )}            {profile && profile.socialMedia && (profile.socialMedia.facebook || profile.socialMedia.instagram || profile.socialMedia.twitter) && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">
                   Social Media
                 </h3>
                 <div className="flex space-x-4">
-                  {profile.facebook && (
+                  {profile.socialMedia.facebook && (
                     <a
-                      href={profile.facebook}
+                      href={profile.socialMedia.facebook}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800"
@@ -237,9 +263,9 @@ const FarmerDetailPage = () => {
                       <FaFacebook className="text-2xl" />
                     </a>
                   )}
-                  {profile.instagram && (
+                  {profile.socialMedia.instagram && (
                     <a
-                      href={profile.instagram}
+                      href={profile.socialMedia.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-pink-600 hover:text-pink-800"
@@ -247,9 +273,9 @@ const FarmerDetailPage = () => {
                       <FaInstagram className="text-2xl" />
                     </a>
                   )}
-                  {profile.twitter && (
+                  {profile.socialMedia.twitter && (
                     <a
-                      href={profile.twitter}
+                      href={profile.socialMedia.twitter}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:text-blue-600"
@@ -259,50 +285,68 @@ const FarmerDetailPage = () => {
                   )}
                 </div>
               </div>
-            )}
-
+            )}            {/* Business Hours and Order Options - only show if either section has content */}
             {profile && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">
-                    Business Hours
-                  </h3>
-                  <p className="text-gray-700">
-                    {profile.businessHours || "Not specified"}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">
-                    Order Options
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <span
-                        className={`w-3 h-3 rounded-full mr-2 ${profile.acceptsPickup
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                          }`}
-                      ></span>
-                      Pickup
+              (profile.businessHours && Object.values(profile.businessHours).some(
+                (day) => day && day.open && day.close && day.open.trim() !== "" && day.close.trim() !== ""
+              )) ||
+              (profile.acceptsPickup || profile.acceptsDelivery)
+            ) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {/* Business Hours - only show if any day has hours set */}
+                  {profile.businessHours && Object.values(profile.businessHours).some(
+                    (day) => day && day.open && day.close && day.open.trim() !== "" && day.close.trim() !== ""
+                  ) && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-3">
+                          Business Hours
+                        </h3>
+                        <div className="text-gray-700">
+                          <div className="space-y-1">
+                            {Object.entries(profile.businessHours).map(([day, hours]) => (
+                              <div key={day} className="flex justify-between">
+                                <span className="capitalize">{day}:</span>
+                                <span>
+                                  {hours?.open && hours?.close
+                                    ? `${hours.open} - ${hours.close}`
+                                    : "Closed"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Order Options - only show if any option is enabled */}
+                  {(profile.acceptsPickup || profile.acceptsDelivery) && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">
+                        Order Options
+                      </h3>
+                      <div className="space-y-2">
+                        {profile.acceptsPickup && (
+                          <div className="flex items-center">
+                            <span className="w-3 h-3 rounded-full mr-2 bg-green-500"></span>
+                            Pickup
+                          </div>
+                        )}
+                        {profile.acceptsDelivery && (
+                          <div className="flex items-center">
+                            <span className="w-3 h-3 rounded-full mr-2 bg-green-500"></span>
+                            Delivery
+                            {profile.deliveryRadius && profile.deliveryRadius > 0 && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                ({profile.deliveryRadius} miles radius)
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <span
-                        className={`w-3 h-3 rounded-full mr-2 ${profile.offersDelivery
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                          }`}
-                      ></span>
-                      Delivery
-                      {profile.offersDelivery && profile.deliveryRadius && (
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({profile.deliveryRadius} miles radius)
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </div>

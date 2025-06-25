@@ -2,6 +2,7 @@ const express = require("express");
 const {
   getAllFarmers,
   getFarmerProfile,
+  getMyFarmerProfile,
   updateFarmerProfile,
   updateUserProfile,
   getAllUsers,
@@ -13,11 +14,14 @@ const router = express.Router();
 
 // Public routes
 router.get("/farmers", getAllFarmers);
-router.get("/farmers/:id", getFarmerProfile);
 
-// Private routes
+// Private routes (must come before parameterized routes)
+router.get("/farmers/my-profile", verifyToken, isFarmer, getMyFarmerProfile);
 router.put("/profile", verifyToken, updateUserProfile);
 router.put("/farmers/profile", verifyToken, isFarmer, updateFarmerProfile);
+
+// Public parameterized routes (must come after specific routes)
+router.get("/farmers/:id", getFarmerProfile);
 
 // Admin routes
 router.get("/", verifyToken, isAdmin, getAllUsers);

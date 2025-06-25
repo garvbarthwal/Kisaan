@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateProfile } from "../redux/slices/authSlice";
-import { updateFarmerProfile } from "../redux/slices/farmerSlice";
+import { updateFarmerProfile, getMyFarmerProfile, getAllFarmers, clearSuccessState } from "../redux/slices/farmerSlice";
 import Loader from "../components/Loader";
 import {
   FaUser,
@@ -10,7 +10,10 @@ import {
   FaMapMarkerAlt,
   FaLeaf,
   FaCheck,
+  FaUpload,
+  FaTimes,
 } from "react-icons/fa";
+import UploadProgress from "../components/UploadProgress";
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
@@ -31,10 +34,11 @@ const ProfilePage = () => {
       zipCode: "",
     },
   });
-
   const [farmerForm, setFarmerForm] = useState({
     farmName: "",
     description: "",
+    farmImages: [],
+    farmImageFiles: [], // For storing new File objects to upload
     farmingPractices: [],
     establishedYear: "",
     socialMedia: {
@@ -55,9 +59,18 @@ const ProfilePage = () => {
     acceptsDelivery: false,
     deliveryRadius: 0,
   });
-
   const [farmingPractice, setFarmingPractice] = useState("");
   const [activeTab, setActiveTab] = useState("general");
+  const [farmImagePreviewUrls, setFarmImagePreviewUrls] = useState([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  // Upload progress states for farm images
+  const [farmImageUploadState, setFarmImageUploadState] = useState({
+    isUploading: false,
+    progress: 0,
+    uploadComplete: false,
+    uploadError: null
+  });
 
   useEffect(() => {
     if (user) {
@@ -74,11 +87,20 @@ const ProfilePage = () => {
     }
   }, [user]);
 
+  // Fetch farmer profile when component loads
+  useEffect(() => {
+    if (user?.role === "farmer") {
+      dispatch(getMyFarmerProfile());
+    }
+  }, [dispatch, user?.role]);
+
   useEffect(() => {
     if (user?.role === "farmer" && myFarmerProfile) {
       setFarmerForm({
         farmName: myFarmerProfile.farmName || "",
         description: myFarmerProfile.description || "",
+        farmImages: myFarmerProfile.farmImages || [],
+        farmImageFiles: [], // Initialize as empty array for new uploads
         farmingPractices: myFarmerProfile.farmingPractices || [],
         establishedYear: myFarmerProfile.establishedYear || "",
         socialMedia: {
@@ -115,13 +137,25 @@ const ProfilePage = () => {
             open: "",
             close: "",
           },
-        },
-        acceptsPickup: myFarmerProfile.acceptsPickup || false,
+        }, acceptsPickup: myFarmerProfile.acceptsPickup || false,
         acceptsDelivery: myFarmerProfile.acceptsDelivery || false,
         deliveryRadius: myFarmerProfile.deliveryRadius || 0,
       });
+      // Set preview URLs to existing farm images
+      setFarmImagePreviewUrls(myFarmerProfile.farmImages || []);
     }
   }, [user, myFarmerProfile]);
+
+  // Clear success state after some time
+  useEffect(() => {
+    if (farmerSuccess) {
+      const timer = setTimeout(() => {
+        dispatch(clearSuccessState());
+      }, 5000); // Clear after 5 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [farmerSuccess, dispatch]);
 
   const handleUserChange = (e) => {
     const { name, value } = e.target;
@@ -197,7 +231,6 @@ const ProfilePage = () => {
       setFarmingPractice("");
     }
   };
-
   const handleRemoveFarmingPractice = (index) => {
     setFarmerForm({
       ...farmerForm,
@@ -206,15 +239,180 @@ const ProfilePage = () => {
       ),
     });
   };
+  const handleFarmImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    processNewFarmImages(files);
+  };
+
+  const processNewFarmImages = (files) => {
+    if (files.length === 0) return;
+
+    // Create local preview URLs for immediate display
+    const newImagePreviewUrls = files.map((file) => URL.createObjectURL(file));
+
+    // Update preview URLs (combine existing URLs with new ones)
+    setFarmImagePreviewUrls([...farmImagePreviewUrls, ...newImagePreviewUrls]);
+
+    // Store the actual file objects for later upload
+    setFarmerForm({
+      ...farmerForm,
+      farmImageFiles: [...(farmerForm.farmImageFiles || []), ...files],
+      // Keep previous images that are already on Cloudinary
+      farmImages: farmerForm.farmImages || [],
+    });
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!farmImageUploadState.isUploading) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (farmImageUploadState.isUploading) return;
+
+    const files = Array.from(e.dataTransfer.files).filter(file =>
+      file.type.startsWith('image/')
+    );
+
+    if (files.length > 0) {
+      processNewFarmImages(files);
+    }
+  };
+
+  const removeFarmImage = (index) => {
+    const newImagePreviewUrls = [...farmImagePreviewUrls];
+    const existingImagesCount = farmerForm.farmImages ? farmerForm.farmImages.length : 0;
+
+    // Remove the preview URL
+    newImagePreviewUrls.splice(index, 1);
+    setFarmImagePreviewUrls(newImagePreviewUrls);
+
+    if (index < existingImagesCount) {
+      // Removing an existing image (from Cloudinary)
+      const newImages = [...farmerForm.farmImages];
+      newImages.splice(index, 1);
+      setFarmerForm({
+        ...farmerForm,
+        farmImages: newImages,
+      });
+    } else {
+      // Removing a newly uploaded file
+      const newFileIndex = index - existingImagesCount;
+      const newImageFiles = [...(farmerForm.farmImageFiles || [])];
+      newImageFiles.splice(newFileIndex, 1);
+      setFarmerForm({
+        ...farmerForm,
+        farmImageFiles: newImageFiles,
+      });
+    }
+  };
 
   const handleUserSubmit = (e) => {
     e.preventDefault();
     dispatch(updateProfile(userForm));
   };
-
-  const handleFarmerSubmit = (e) => {
+  const handleFarmerSubmit = async (e) => {
     e.preventDefault();
-    dispatch(updateFarmerProfile(farmerForm));
+
+    try {
+      let updatedFarmerForm = { ...farmerForm };
+
+      // If we have new farm image files to upload
+      if (farmerForm.farmImageFiles && farmerForm.farmImageFiles.length > 0) {
+        // Import the upload utility dynamically
+        const { uploadFarmImages, validateImages } = await import('../utils/imageUpload');
+
+        // Validate images before attempting to upload
+        const validation = validateImages(farmerForm.farmImageFiles, {
+          maxSize: 5 * 1024 * 1024, // 5MB for farm images
+          maxCount: 10 // Allow up to 10 farm images
+        });
+        if (!validation.valid) {
+          setFarmImageUploadState(prev => ({
+            ...prev,
+            uploadError: validation.errors[0]
+          }));
+          return;
+        }
+
+        // Upload new farm images to Cloudinary with progress tracking
+        const newFarmImageUrls = await uploadFarmImages(farmerForm.farmImageFiles, {
+          validate: false,
+          onUploadStart: () => {
+            setFarmImageUploadState(prev => ({
+              ...prev,
+              isUploading: true,
+              progress: 0,
+              uploadError: null
+            }));
+          },
+          onProgress: (progress) => {
+            setFarmImageUploadState(prev => ({
+              ...prev,
+              progress
+            }));
+          },
+          onUploadComplete: () => {
+            setFarmImageUploadState(prev => ({
+              ...prev,
+              isUploading: false,
+              uploadComplete: true
+            }));
+          }
+        });
+
+        // Combine existing Cloudinary images with new ones
+        updatedFarmerForm = {
+          ...farmerForm,
+          farmImages: [...farmerForm.farmImages.filter(img => img.startsWith('http')), ...newFarmImageUrls]
+        };
+
+        // Remove temporary fields
+        delete updatedFarmerForm.farmImageFiles;
+      }      // Update the farmer profile
+      const result = await dispatch(updateFarmerProfile(updatedFarmerForm));
+
+      if (result.type === 'farmers/updateFarmerProfile/fulfilled') {
+        // Refresh the farmers list so other users see the updated profile
+        dispatch(getAllFarmers());
+
+        // Refresh own profile to ensure consistency
+        dispatch(getMyFarmerProfile());
+
+        // Clear any new image files since they've been uploaded
+        setFarmerForm(prev => ({
+          ...prev,
+          farmImageFiles: []
+        }));
+
+        // Reset upload state
+        setFarmImageUploadState({
+          isUploading: false,
+          progress: 0,
+          uploadComplete: false,
+          uploadError: null
+        });
+      }
+    } catch (error) {
+      setFarmImageUploadState(prev => ({
+        ...prev,
+        isUploading: false,
+        uploadError: error.message || 'Failed to upload farm images. Please try again.'
+      }));
+    }
   };
 
   if (loading || farmerLoading) {
@@ -447,9 +645,7 @@ const ProfilePage = () => {
                   max={new Date().getFullYear()}
                 />
               </div>
-            </div>
-
-            <div className="mb-6">
+            </div>            <div className="mb-6">
               <label
                 htmlFor="description"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -466,6 +662,112 @@ const ProfilePage = () => {
                 placeholder="Tell customers about your farm..."
                 required
               ></textarea>
+            </div>            {/* Farm Images Upload Section */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Farm Images
+              </label>              <div className="flex flex-col space-y-3">
+                {/* Upload Area with Drag & Drop */}
+                <div
+                  className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 ${isDragOver
+                    ? 'border-green-500 bg-green-50'
+                    : farmImageUploadState.isUploading
+                      ? 'border-gray-200 bg-gray-50'
+                      : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
+                    }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <div className="text-center">
+                    <div className="flex justify-center mb-3">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isDragOver ? 'bg-green-200' : 'bg-green-100'
+                        }`}>
+                        <FaUpload className={`text-xl transition-colors ${isDragOver ? 'text-green-600' : 'text-green-500'
+                          }`} />
+                      </div>
+                    </div>
+                    <label className="cursor-pointer">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-1">
+                          {isDragOver
+                            ? 'Drop your farm images here'
+                            : 'Drag & drop farm images or click to browse'
+                          }
+                        </p>
+                        <p className="text-xs text-gray-500 mb-3">
+                          PNG, JPG, WebP up to 5MB each (Max 10 images)
+                        </p>
+                        <span className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${farmImageUploadState.isUploading
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                          : isDragOver
+                            ? 'bg-green-700 text-white'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                          }`}>
+                          {farmImageUploadState.isUploading ? 'Uploading...' : 'Choose Images'}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFarmImageChange}
+                        className="hidden"
+                        disabled={farmImageUploadState.isUploading}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Progress Component */}
+              <UploadProgress
+                isUploading={farmImageUploadState.isUploading}
+                progress={farmImageUploadState.progress}
+                uploadComplete={farmImageUploadState.uploadComplete}
+                uploadError={farmImageUploadState.uploadError}
+                fileCount={farmerForm.farmImageFiles?.length || 0}
+                className="mt-4"
+              />              {/* Image Preview Grid */}
+              {farmImagePreviewUrls.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    Farm Images ({farmImagePreviewUrls.length})
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {farmImagePreviewUrls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square w-full overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
+                          <img
+                            src={url || "/placeholder.svg"}
+                            alt={`Farm image ${index + 1}`}
+                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFarmImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg transform hover:scale-110"
+                          disabled={farmImageUploadState.isUploading}
+                          title="Remove image"
+                        >
+                          <FaTimes className="w-3 h-3" />
+                        </button>
+                        {/* Image index indicator */}
+                        <div className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-1.5 py-0.5 rounded">
+                          {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>                  <p className="text-xs text-gray-500 mt-2">
+                    Drag and drop images or click to browse. Images will be optimized automatically for best performance.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
@@ -655,14 +957,17 @@ const ProfilePage = () => {
                   </div>
                 )}
               </div>
-            </div>
-
-            <button
+            </div>            <button
               type="submit"
               className="btn btn-primary"
-              disabled={farmerLoading}
+              disabled={farmerLoading || farmImageUploadState.isUploading}
             >
-              {farmerLoading ? "Saving..." : "Save Farm Profile"}
+              {farmImageUploadState.isUploading
+                ? `Uploading... ${farmImageUploadState.progress}%`
+                : farmerLoading
+                  ? "Saving..."
+                  : "Save Farm Profile"
+              }
             </button>
 
             {farmerSuccess && (

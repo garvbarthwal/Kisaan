@@ -203,3 +203,96 @@ export const uploadProfileImage = async (file, options = {}) => {
         throw error;
     }
 };
+
+/**
+ * Upload farm images
+ * 
+ * @param {FileList|File[]} files - The farm images to upload
+ * @param {Object} options - Upload options
+ * @param {boolean} options.validate - Whether to validate images (default: true)
+ * @param {Function} options.onProgress - Progress callback function
+ * @param {Function} options.onUploadStart - Called when upload starts
+ * @param {Function} options.onUploadComplete - Called when upload completes
+ * @returns {Promise<string[]>} - Array of farm image URLs
+ */
+export const uploadFarmImages = async (files, options = {}) => {
+    const {
+        validate = true,
+        onProgress,
+        onUploadStart,
+        onUploadComplete
+    } = options;
+
+    try {
+        // Call upload start callback
+        if (onUploadStart) {
+            onUploadStart();
+        }
+
+        // Convert FileList to array and filter out valid File objects only
+        const fileArray = Array.from(files).filter(file => {
+            // Only accept actual File objects, not blob URLs or other types
+            return file instanceof File && file.size > 0 && file.type.startsWith('image/');
+        });
+
+        if (fileArray.length === 0) {
+            throw new Error('No valid image files to upload');
+        }
+
+        // Validate images if needed
+        if (validate) {
+            const validation = validateImages(fileArray, {
+                maxSize: 5 * 1024 * 1024, // 5MB for farm images
+                maxCount: 10 // Allow up to 10 farm images
+            });
+            if (!validation.valid) {
+                throw new Error(validation.errors.join(', '));
+            }
+        }
+
+        const formData = new FormData();
+
+        // Append each file to the form data
+        fileArray.forEach((file, index) => {
+            formData.append('images', file, file.name);
+        });
+
+        const config = {
+            headers: {
+                // Don't set Content-Type manually for FormData
+                // Let axios set it with the proper boundary
+            },
+            onUploadProgress: (progressEvent) => {
+                if (onProgress) {
+                    const percentCompleted = Math.round(
+                        (progressEvent.loaded * 100) / progressEvent.total
+                    );
+                    onProgress(percentCompleted, progressEvent);
+                }
+            }
+        };
+
+        const res = await axios.post('/api/upload/farm-images', formData, config);
+
+        // Call upload complete callback
+        if (onUploadComplete) {
+            onUploadComplete();
+        }
+
+        if (res.data.success) {
+            return res.data.imageUrls;
+        } else {
+            throw new Error(res.data.message || 'Failed to upload farm images');
+        }
+    } catch (error) {
+        // Provide more specific error messages
+        if (error.response) {
+            const errorMsg = error.response.data?.message || error.response.statusText || 'Upload failed';
+            throw new Error(`Upload failed: ${errorMsg}`);
+        } else if (error.request) {
+            throw new Error('Network error: Unable to reach the server');
+        } else {
+            throw new Error(error.message || 'Upload failed');
+        }
+    }
+};

@@ -11,11 +11,10 @@ const FarmersPage = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredFarmers, setFilteredFarmers] = useState([]);
-
   useEffect(() => {
+    // Always fetch fresh data when component mounts
     dispatch(getAllFarmers());
   }, [dispatch]);
-
   useEffect(() => {
     if (farmers) {
       setFilteredFarmers(
