@@ -21,7 +21,6 @@ const ConversationPage = () => {
   const dispatch = useDispatch();
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const messagesContainerRef = useRef(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const [newMessage, setNewMessage] = useState("");
