@@ -50,10 +50,27 @@ export const getQueryHistory = createAsyncThunk(
     }
 )
 
+// Get sample queries
+export const getSampleQueries = createAsyncThunk(
+    "ai/getSampleQueries",
+    async (_, { rejectWithValue }) => {
+        try {
+            const { data } = await axiosInstance.get("/api/ai/sample-queries")
+            return data
+        } catch (error) {
+            const message = error.response && error.response.data.message
+                ? error.response.data.message
+                : error.message
+            return rejectWithValue(message)
+        }
+    }
+)
+
 const initialState = {
     conversations: [],
     currentConversation: null,
     supportedLanguages: [],
+    sampleQueries: [],
     loading: false,
     queryLoading: false,
     error: null,
@@ -124,6 +141,19 @@ const aiSlice = createSlice({
                 // Handle history data if implemented on backend
             })
             .addCase(getQueryHistory.rejected, (state, action) => {
+                state.loading = false
+                state.error = action.payload
+            })
+            // Get sample queries
+            .addCase(getSampleQueries.pending, (state) => {
+                state.loading = true
+                state.error = null
+            })
+            .addCase(getSampleQueries.fulfilled, (state, action) => {
+                state.loading = false
+                state.sampleQueries = action.payload.data
+            })
+            .addCase(getSampleQueries.rejected, (state, action) => {
                 state.loading = false
                 state.error = action.payload
             })

@@ -14,12 +14,16 @@ const AIAssistantFab = () => {
 
     return (
         <button
-            className="fixed bottom-6 right-6 z-50 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg p-4 flex items-center justify-center transition-colors"
-            style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.18)" }}
+            className="fixed bottom-4 right-4 z-50 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg p-3 lg:p-4 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
+            style={{
+                boxShadow: "0 4px 16px rgba(34, 197, 94, 0.3)",
+                minWidth: "3.5rem",
+                minHeight: "3.5rem"
+            }}
             aria-label="Open AI Assistant"
             onClick={() => navigate("/farmer/ai-assistant")}
         >
-            <FaRobot size={28} />
+            <FaRobot size={20} className="lg:text-2xl" />
         </button>
     );
 };

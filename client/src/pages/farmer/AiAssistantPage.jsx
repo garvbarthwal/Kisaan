@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
     askFarmingQuery,
     getSupportedLanguages,
+    getSampleQueries,
     setSelectedLanguage,
     clearError
 } from "../../redux/slices/aiSlice";
@@ -16,7 +17,9 @@ import {
     FaLanguage,
     FaHistory,
     FaLeaf,
-    FaLightbulb
+    FaLightbulb,
+    FaTimes,
+    FaBars
 } from "react-icons/fa";
 
 const AiAssistantPage = () => {
@@ -25,6 +28,7 @@ const AiAssistantPage = () => {
         conversations,
         currentConversation,
         supportedLanguages,
+        sampleQueries: apiSampleQueries,
         queryLoading,
         selectedLanguage,
         error
@@ -35,37 +39,26 @@ const AiAssistantPage = () => {
     const [recognition, setRecognition] = useState(null);
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [showSidebar, setShowSidebar] = useState(false);
     const messagesEndRef = useRef(null);
+    const chatContainerRef = useRef(null);
 
-    // Sample queries for suggestions
-    const sampleQueries = [
+    // Sample queries for suggestions - will be fetched from API
+    const [sampleQueries, setSampleQueries] = useState([
         {
             en: "What is the best time to plant rice in monsoon season?",
-            hi: "मानसून में धान बोने का सबसे अच्छा समय कौन सा है?",
-            bn: "বর্ষাকালে ধান রোপণের সেরা সময় কোনটি?",
-            te: "ఋతుపవన కాలంలో వరి నాటడానికి ఉత్తమ సమయం ఏది?",
-            mr: "पावसाळ्यात भात लावण्यासाठी सर्वोत्तम वेळ कोणती आहे?",
-            ta: "பருவமழைக் காலத்தில் நெல் நடுவதற்கு சிறந்த நேரம் எது?",
-            gu: "ચોમાસાની ઋતુમાં ડાંગર વાવવાનો શ્રેષ્ઠ સમય કયો છે?",
-            kn: "ಮುಂಗಾರು ಹಂಗಾಮಿನಲ್ಲಿ ಭತ್ತ ನೆಡಲು ಉತ್ತಮ ಸಮಯ ಯಾವುದು?",
-            ml: "മഴക്കാലത്ത് നെൽകൃഷിക്ക് ഏറ്റവും അനുയോജ്യമായ സമയം ഏതാണ്?",
-            pa: "ਮਾਨਸੂਨ ਦੇ ਮੌਸਮ ਵਿੱਚ ਝੋਨਾ ਲਗਾਉਣ ਦਾ ਸਭ ਤੋਂ ਵਧੀਆ ਸਮਾਂ ਕਿਹੜਾ ਹੈ?",
-            or: "ବର୍ଷା ଋତୁରେ ଧାନ ଲଗାଇବା ପାଇଁ ସର୍ବୋତ୍ତମ ସମୟ କେବେ?",
-            as: "বৰ্ষাকালত ধান ৰোৱাৰ বাবে আটাইতকৈ ভাল সময় কোনটো?",
-            ur: "مون سون کے موسم میں چاول لگانے کا بہترین وقت کیا ہے؟",
-            category: "Seasonal Farming",
-            category_hi: "मौसमी खेती",
-            category_bn: "মৌসুমী চাষ",
-            category_te: "రుతుపవన వ్యవసాయం",
-            category_mr: "मोसमी शेती",
-            category_ta: "பருவகால விவசாயம்",
-            category_gu: "મોસમી ખેતી",
-            category_kn: "ಕಾಲೋಚಿತ ಬೇಸಾಯ",
-            category_ml: "കാലാവസ്ഥാ കൃഷി",
-            category_pa: "ਮੌਸਮੀ ਖੇਤੀ",
-            category_or: "ଋତୁକାଳୀନ ଚାଷ",
-            category_as: "মৌসুমী খেতি",
-            category_ur: "موسمی کاشتکاری"
+            hi: "मानسून में धान बोने का सबसे अच्छा समय कौन सा है?",
+            category: "Seasonal Farming"
+        },
+        {
+            en: "How much wheat do I have in stock?",
+            hi: "मेरे पास कितना गेहूं स्टॉक में है?",
+            category: "Stock Management"
+        },
+        {
+            en: "Show me all my inventory",
+            hi: "मेरा सारा स्टॉक दिखाएं",
+            category: "Stock Management"
         },
         {
             en: "How to control pest attacks on tomato plants?",
@@ -79,7 +72,7 @@ const AiAssistantPage = () => {
             ml: "തക്കാളി ചെടികളിലെ കീടബാധ എങ്ങനെ നിയന്ത്രിക്കാം?",
             pa: "ਟਮਾਟਰ ਦੇ ਪੌਦਿਆਂ 'ਤੇ ਕੀੜਿਆਂ ਦੇ ਹਮਲਿਆਂ ਨੂੰ ਕਿਵੇਂ ਕੰਟਰੋਲ ਕਰੀਏ?",
             or: "ଟମାଟୋ ଗଛରେ କୀଟ ଆକ୍ରମଣକୁ କିପରି ନିୟନ୍ତ୍ରଣ କରିବେ?",
-            as: " বিলাহী গছত কীট-পতংগৰ আক্ৰমণ কেনেকৈ নিয়ন্ত্ৰণ কৰিব?",
+            as: "বিলাহী গছত কীট-পতংগৰ আক্ৰমণ কেনেকৈ নিয়ন্ত্ৰণ কৰিব?",
             ur: "ٹماٹر کے پودوں پر کیڑوں کے حملوں کو کیسے کنٹرول کیا جائے؟",
             category: "Pest Control",
             category_hi: "कीट नियंत्रण",
@@ -93,7 +86,7 @@ const AiAssistantPage = () => {
             category_pa: "ਕੀਟ ਕੰਟਰੋਲ",
             category_or: "କୀଟ ନିୟନ୍ତ୍ରଣ",
             category_as: "কীট নিয়ন্ত্রণ",
-            category_ur: "کیڑوں پر قابو"
+            category_ur: "کیڑوں پর قابو"
         },
         {
             en: "What are the government subsidies available for organic farming?",
@@ -151,10 +144,11 @@ const AiAssistantPage = () => {
             category_as: "জল ব্যৱস্থাপনা",
             category_ur: "آبی انتظام"
         }
-    ];
+    ]);
 
     useEffect(() => {
         dispatch(getSupportedLanguages());
+        dispatch(getSampleQueries());
 
         // Initialize speech recognition if available
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -182,6 +176,61 @@ const AiAssistantPage = () => {
             setRecognition(recognitionInstance);
         }
     }, [dispatch, selectedLanguage]);
+
+    // Auto-scroll to bottom when new messages arrive (only scroll the chat container)
+    useEffect(() => {
+        if (messagesEndRef.current && chatContainerRef.current) {
+            // Use setTimeout to ensure DOM is updated before scrolling
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "end",
+                    inline: "nearest"
+                });
+            };
+
+            // Immediate scroll for better UX
+            scrollToBottom();
+
+            // Delayed scroll to ensure content is fully rendered
+            setTimeout(scrollToBottom, 100);
+        }
+    }, [conversations, queryLoading]);
+
+    // Close sidebar when clicking outside on mobile, but not when interacting with language dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showSidebar && !event.target.closest('.sidebar-content') && !event.target.closest('.mobile-menu-btn')) {
+                setShowSidebar(false);
+            }
+        };
+
+        if (showSidebar) {
+            document.addEventListener('click', handleClickOutside);
+            // Prevent body scroll on mobile when sidebar is open
+            document.body.classList.add('sidebar-open');
+            return () => {
+                document.removeEventListener('click', handleClickOutside);
+                document.body.classList.remove('sidebar-open');
+            };
+        } else {
+            document.body.classList.remove('sidebar-open');
+        }
+    }, [showSidebar]);
+
+    // Close language dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showLanguageDropdown && !event.target.closest('.language-dropdown-container')) {
+                setShowLanguageDropdown(false);
+            }
+        };
+
+        if (showLanguageDropdown) {
+            document.addEventListener('click', handleClickOutside);
+            return () => document.removeEventListener('click', handleClickOutside);
+        }
+    }, [showLanguageDropdown]);
 
     const getLanguageCode = (langCode) => {
         const languageMap = {
@@ -227,7 +276,18 @@ const AiAssistantPage = () => {
             language: selectedLanguage
         };
 
-        dispatch(askFarmingQuery(queryData));
+        dispatch(askFarmingQuery(queryData))
+            .unwrap()
+            .then(() => {
+                // Clear the input
+                setQuery("");
+                // Auto-scroll will be handled by useEffect
+            })
+            .catch(() => {
+                // Error is handled by the slice
+            });
+
+        // Clear the input immediately to provide instant feedback
         setQuery("");
     };
 
@@ -239,6 +299,8 @@ const AiAssistantPage = () => {
     const handleLanguageChange = (langCode) => {
         dispatch(setSelectedLanguage(langCode));
         setShowLanguageDropdown(false);
+        // Close sidebar on mobile after language selection
+        setShowSidebar(false);
     };
 
     const getSelectedLanguageName = () => {
@@ -247,125 +309,199 @@ const AiAssistantPage = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <div className="flex items-center mb-8">
+        <div className="min-h-screen bg-gray-50">
+            {/* Mobile Header */}
+            <div className="lg:hidden bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
-                        <FaRobot className="text-white text-xl" />
+                    <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                        <FaRobot className="text-white text-sm" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800">AI Farming Assistant</h1>
-                        <p className="text-gray-600">Get expert farming advice in your language</p>
+                        <h1 className="text-lg font-bold text-gray-800">AI Assistant</h1>
                     </div>
                 </div>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSidebar(!showSidebar);
+                    }}
+                    className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors mobile-menu-btn"
+                >
+                    <FaBars className="text-lg" />
+                </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="flex h-screen lg:h-auto lg:min-h-screen">
                 {/* Sidebar */}
-                <div className="lg:col-span-1 space-y-4">
-                    {/* Language Selector */}
-                    <div className="bg-white rounded-xl shadow-md p-4">
-                        <h3 className="font-semibold mb-3 flex items-center">
-                            <FaLanguage className="mr-2 text-green-500" />
-                            Language
-                        </h3>
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                                className="w-full p-3 border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-green-500 transition-colors"
-                            >
-                                <span>{getSelectedLanguageName()}</span>
-                                <span className="text-gray-400">▼</span>
-                            </button>
+                <div className={`
+                    fixed lg:relative top-0 left-0 h-full lg:h-auto
+                    w-80 lg:w-72 xl:w-80 bg-white shadow-lg lg:shadow-none
+                    transform transition-transform duration-300 ease-in-out z-40
+                    ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    lg:block border-r border-gray-200 sidebar-content
+                `}>
+                    {/* Mobile close button */}
+                    <div className="lg:hidden flex items-center justify-between p-4 border-b">
+                        <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
+                        <button
+                            onClick={() => setShowSidebar(false)}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <FaTimes />
+                        </button>
+                    </div>
 
-                            {showLanguageDropdown && (
-                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                    {supportedLanguages.map((lang) => (
-                                        <button
-                                            key={lang.code}
-                                            onClick={() => handleLanguageChange(lang.code)}
-                                            className={`w-full p-3 text-left hover:bg-green-50 transition-colors ${selectedLanguage === lang.code ? 'bg-green-100 text-green-700' : ''
-                                                }`}
-                                        >
-                                            {lang.nativeName}
-                                        </button>
-                                    ))}
+                    <div className="p-4 space-y-4 h-full overflow-y-auto custom-scrollbar">
+                        {/* Desktop Header */}
+                        <div className="hidden lg:block mb-6">
+                            <div className="flex items-center space-x-3 mb-2">
+                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                                    <FaRobot className="text-white text-lg" />
                                 </div>
-                            )}
+                                <div>
+                                    <h1 className="text-xl font-bold text-gray-800">AI Assistant</h1>
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-600">Get expert farming advice in your language</p>
                         </div>
-                    </div>
 
-                    {/* Sample Queries */}
-                    <div className="bg-white rounded-xl shadow-md p-4">
-                        <h3 className="font-semibold mb-3 flex items-center">
-                            <FaLightbulb className="mr-2 text-yellow-500" />
-                            Quick Queries
-                        </h3>
-                        <div className="space-y-2">
-                            {sampleQueries.map((sample, index) => (
+                        {/* Language Selector */}
+                        <div className="bg-gray-50 rounded-xl p-4">
+                            <h3 className="font-semibold mb-3 flex items-center text-sm">
+                                <FaLanguage className="mr-2 text-green-500" />
+                                Language
+                            </h3>
+                            <div className="relative language-dropdown-container">
                                 <button
-                                    key={index}
-                                    onClick={() => handleSampleQuery(sample)}
-                                    className="w-full p-2 text-left text-sm bg-gray-50 hover:bg-green-50 rounded-lg transition-colors border border-gray-200 hover:border-green-300"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowLanguageDropdown(!showLanguageDropdown);
+                                    }}
+                                    className="w-full p-3 border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-green-500 transition-colors bg-white"
                                 >
-                                    <div className="font-medium text-green-600 text-xs mb-1">
-                                        {/* Render category label based on selected language */}
-                                        {sample[`category_${selectedLanguage}`] || sample.category}
-                                    </div>
-                                    <div className="text-gray-700 line-clamp-2">
-                                        {selectedLanguage === 'en' ? sample.en : (sample[selectedLanguage] || sample.en)}
-                                    </div>
+                                    <span className="text-sm">{getSelectedLanguageName()}</span>
+                                    <span className="text-gray-400 text-xs">{showLanguageDropdown ? '▲' : '▼'}</span>
                                 </button>
-                            ))}
-                        </div>
-                    </div>
 
-                    {/* History Toggle */}
-                    <button
-                        onClick={() => setShowHistory(!showHistory)}
-                        className="w-full bg-white rounded-xl shadow-md p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                    >
-                        <span className="flex items-center font-semibold">
-                            <FaHistory className="mr-2 text-blue-500" />
-                            Conversation History
-                        </span>
-                        <span className="text-gray-400">{showHistory ? '▼' : '▶'}</span>
-                    </button>
+                                {showLanguageDropdown && (
+                                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl language-dropdown">
+                                        {supportedLanguages.map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleLanguageChange(lang.code);
+                                                }}
+                                                className={`w-full p-3 text-left hover:bg-green-50 transition-colors text-sm ${selectedLanguage === lang.code ? 'bg-green-100 text-green-700' : 'text-gray-700'
+                                                    } first:rounded-t-lg last:rounded-b-lg`}
+                                            >
+                                                {lang.nativeName}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Sample Queries */}
+                        <div className="bg-gray-50 rounded-xl p-4">
+                            <h3 className="font-semibold mb-3 flex items-center text-sm">
+                                <FaLightbulb className="mr-2 text-yellow-500" />
+                                Quick Queries
+                            </h3>
+                            <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                {(apiSampleQueries.length > 0 ? apiSampleQueries : sampleQueries).map((sample, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => {
+                                            handleSampleQuery(sample);
+                                            setShowSidebar(false);
+                                        }}
+                                        className="w-full p-3 text-left text-xs bg-white hover:bg-green-50 rounded-lg transition-colors border border-gray-200 hover:border-green-300"
+                                    >
+                                        <div className="font-medium text-green-600 text-xs mb-1">
+                                            {sample[`category_${selectedLanguage}`] || sample.category}
+                                        </div>
+                                        <div className="text-gray-700 line-clamp-3 leading-relaxed">
+                                            {selectedLanguage === 'en' ? sample.en : (sample[selectedLanguage] || sample.en)}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* History Toggle */}
+                        <button
+                            onClick={() => {
+                                setShowHistory(!showHistory);
+                                if (!showHistory) setShowSidebar(false);
+                            }}
+                            className="w-full bg-gray-50 rounded-xl p-4 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                        >
+                            <span className="flex items-center font-semibold text-sm">
+                                <FaHistory className="mr-2 text-blue-500" />
+                                History
+                            </span>
+                            <span className="text-gray-400 text-xs">{showHistory ? '▼' : '▶'}</span>
+                        </button>
+                    </div>
                 </div>
 
+                {/* Overlay for mobile */}
+                {showSidebar && (
+                    <div
+                        className="lg:hidden fixed inset-0 bg-black bg-opacity-40 z-30 sidebar-overlay"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowSidebar(false);
+                        }}
+                    />
+                )}
+
                 {/* Main Chat Area */}
-                <div className="lg:col-span-3">
-                    <div className="bg-white rounded-xl shadow-md h-[600px] flex flex-col">
+                <div className="flex-1 flex flex-col bg-white lg:mt-0 lg:ml-0">
+                    <div className="flex-1 flex flex-col h-screen lg:h-auto lg:min-h-[calc(100vh-2rem)] lg:m-4 lg:rounded-xl lg:shadow-md lg:border overflow-hidden">
                         {/* Chat Messages */}
-                        <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                        <div
+                            ref={chatContainerRef}
+                            className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-3 lg:space-y-4 bg-gray-50 lg:bg-white chat-container"
+                            style={{
+                                paddingTop: '1rem',
+                                paddingBottom: '1rem',
+                                maxHeight: 'calc(100vh - 200px)',
+                                scrollBehavior: 'smooth'
+                            }}
+                        >
                             {conversations.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <FaLeaf className="text-green-500 text-5xl mx-auto mb-4" />
-                                    <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                                <div className="text-center py-8 lg:py-12">
+                                    <FaLeaf className="text-green-500 text-4xl lg:text-5xl mx-auto mb-4" />
+                                    <h3 className="text-lg lg:text-xl font-semibold text-gray-700 mb-2">
                                         Welcome to AI Farming Assistant
                                     </h3>
-                                    <p className="text-gray-500 mb-4">
+                                    <p className="text-gray-500 mb-4 text-sm lg:text-base px-4">
                                         Ask any farming-related question in your preferred language
                                     </p>
-                                    <div className="text-sm text-gray-400">
+                                    <div className="text-xs lg:text-sm text-gray-400 px-4">
                                         You can type your question or use the microphone to speak
                                     </div>
                                 </div>
                             ) : (
                                 <>
-                                    {/* Render conversations oldest to newest (traditional chat order) */}
                                     {conversations.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).map((conversation, index) => (
-                                        <div key={index} className="space-y-4">
+                                        <div key={index} className="space-y-3 lg:space-y-4 chat-message-enter">
                                             {/* User Message */}
                                             <div className="flex justify-end">
-                                                <div className="max-w-xs lg:max-w-md">
-                                                    <div className="bg-green-500 text-white p-4 rounded-2xl rounded-br-md">
+                                                <div className="max-w-[85%] lg:max-w-md xl:max-w-lg">
+                                                    <div className="bg-green-500 text-white p-3 lg:p-4 rounded-2xl rounded-br-md shadow-sm">
                                                         <div className="flex items-start space-x-2">
-                                                            <FaUser className="text-sm mt-1 flex-shrink-0" />
-                                                            <div>
-                                                                <p className="text-sm">{conversation.query}</p>
+                                                            <FaUser className="text-xs mt-1 flex-shrink-0 opacity-80" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm lg:text-base break-words">{conversation.query}</p>
                                                                 <p className="text-xs text-green-100 mt-1">
-                                                                    {new Date(conversation.timestamp).toLocaleTimeString()}
+                                                                    {new Date(conversation.timestamp).toLocaleTimeString([], {
+                                                                        hour: '2-digit',
+                                                                        minute: '2-digit'
+                                                                    })}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -375,15 +511,17 @@ const AiAssistantPage = () => {
 
                                             {/* AI Response */}
                                             <div className="flex justify-start">
-                                                <div className="max-w-xs lg:max-w-2xl">
-                                                    <div className="bg-gray-100 p-4 rounded-2xl rounded-bl-md">
-                                                        <div className="flex items-start space-x-2">
-                                                            <FaRobot className="text-green-500 text-sm mt-1 flex-shrink-0" />
-                                                            <div>
-                                                                <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                                <div className="max-w-[90%] lg:max-w-2xl xl:max-w-3xl">
+                                                    <div className="bg-white lg:bg-gray-100 border lg:border-0 p-3 lg:p-4 rounded-2xl rounded-bl-md shadow-sm">
+                                                        <div className="flex items-start space-x-2 lg:space-x-3">
+                                                            <div className="w-6 h-6 lg:w-7 lg:h-7 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                                <FaRobot className="text-green-500 text-xs lg:text-sm" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm lg:text-base text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
                                                                     {conversation.answer}
                                                                 </p>
-                                                                <p className="text-xs text-gray-500 mt-1">
+                                                                <p className="text-xs text-gray-500 mt-2">
                                                                     AI Assistant
                                                                 </p>
                                                             </div>
@@ -396,15 +534,18 @@ const AiAssistantPage = () => {
 
                                     {queryLoading && (
                                         <div className="flex justify-start">
-                                            <div className="max-w-xs lg:max-w-md">
-                                                <div className="bg-gray-100 p-4 rounded-2xl rounded-bl-md">
-                                                    <div className="flex items-center space-x-2">
-                                                        <FaRobot className="text-green-500" />
+                                            <div className="max-w-[70%] lg:max-w-md">
+                                                <div className="bg-white lg:bg-gray-100 border lg:border-0 p-3 lg:p-4 rounded-2xl rounded-bl-md shadow-sm">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="w-6 h-6 lg:w-7 lg:h-7 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                                            <FaRobot className="text-green-500 text-xs lg:text-sm" />
+                                                        </div>
                                                         <div className="flex space-x-1">
                                                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                                                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                                                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                                         </div>
+                                                        <span className="text-xs text-gray-500">Thinking...</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -416,40 +557,57 @@ const AiAssistantPage = () => {
                         </div>
 
                         {/* Input Form */}
-                        <div className="border-t border-gray-200 p-4">
-                            <form onSubmit={handleSubmit} className="flex space-x-3">
+                        <div className="border-t border-gray-200 bg-white p-3 lg:p-4 safe-area-inset-bottom sticky bottom-0">
+                            <form onSubmit={handleSubmit} className="flex space-x-2 lg:space-x-3">
                                 <div className="flex-1 relative">
-                                    <input
-                                        type="text"
+                                    <textarea
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
-                                        placeholder={`Ask your farming question in ${getSelectedLanguageName()}...`}
-                                        className="w-full p-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSubmit(e);
+                                            }
+                                        }}
+                                        placeholder={`Ask in ${getSelectedLanguageName()}...`}
+                                        className="w-full p-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm lg:text-base resize-none min-h-[48px] max-h-32"
                                         disabled={queryLoading}
+                                        rows={1}
+                                        style={{
+                                            scrollbarWidth: 'none',
+                                            msOverflowStyle: 'none'
+                                        }}
+                                        onInput={(e) => {
+                                            // Auto-resize textarea
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
+                                        }}
                                     />
                                     <button
                                         type="button"
                                         onClick={handleVoiceInput}
-                                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full transition-colors ${isListening
-                                            ? 'text-red-500 hover:text-red-600'
-                                            : 'text-gray-400 hover:text-green-500'
+                                        className={`absolute right-3 top-3 p-1.5 rounded-full transition-colors ${isListening
+                                            ? 'text-red-500 hover:text-red-600 bg-red-50'
+                                            : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
                                             }`}
                                         disabled={queryLoading}
                                     >
-                                        {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
+                                        {isListening ? <FaMicrophoneSlash className="text-sm lg:text-base" /> : <FaMicrophone className="text-sm lg:text-base" />}
                                     </button>
                                 </div>
                                 <button
                                     type="submit"
                                     disabled={!query.trim() || queryLoading}
-                                    className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                                    className="px-4 lg:px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm lg:text-base min-w-[48px] h-12"
                                 >
                                     {queryLoading ? (
-                                        <Loader />
+                                        <div className="w-4 h-4">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                        </div>
                                     ) : (
                                         <>
-                                            <FaPaperPlane />
-                                            <span>Send</span>
+                                            <FaPaperPlane className="text-sm" />
+                                            <span className="hidden sm:inline">Send</span>
                                         </>
                                     )}
                                 </button>
@@ -459,49 +617,53 @@ const AiAssistantPage = () => {
                 </div>
             </div>
 
-            {/* History Sidebar */}
+            {/* History Modal */}
             {showHistory && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden">
-                    <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl p-6 overflow-y-auto">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold">Conversation History</h3>
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md h-[80vh] flex flex-col">
+                        <div className="flex items-center justify-between p-4 border-b">
+                            <h3 className="font-semibold text-lg">Conversation History</h3>
                             <button
                                 onClick={() => setShowHistory(false)}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-gray-500 hover:text-gray-700 p-1"
                             >
-                                ✕
+                                <FaTimes />
                             </button>
                         </div>
 
-                        {conversations.length === 0 ? (
-                            <p className="text-gray-500 text-center py-8">No conversations yet</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {conversations.slice(0, 10).map((conv, index) => (
-                                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                                        <p className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
-                                            {conv.query}
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                            {new Date(conv.timestamp).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            {conversations.length === 0 ? (
+                                <p className="text-gray-500 text-center py-8">No conversations yet</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {conversations.slice().reverse().slice(0, 20).map((conv, index) => (
+                                        <div key={index} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                            <p className="text-sm font-medium text-gray-800 mb-1 line-clamp-2">
+                                                {conv.query}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {new Date(conv.timestamp).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
 
             {error && (
-                <div className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg">
-                    <p>{error}</p>
-                    <button
-                        onClick={() => dispatch(clearError())}
-                        className="ml-2 text-red-200 hover:text-white"
-                    >
-                        ✕
-                    </button>
+                <div className="fixed bottom-4 right-4 left-4 lg:left-auto lg:w-96 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm flex-1">{error}</p>
+                        <button
+                            onClick={() => dispatch(clearError())}
+                            className="ml-2 text-red-200 hover:text-white p-1"
+                        >
+                            <FaTimes className="text-sm" />
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
