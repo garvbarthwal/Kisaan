@@ -14,6 +14,7 @@ import {
   FaBox,
   FaEye,
 } from "react-icons/fa";
+import { filterValidImageUrls } from "../../utils/imageCleanup";
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
@@ -149,12 +150,13 @@ const ProductsPage = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredProducts.map((product) => (
                   <tr key={product._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden mr-3">
-                          {product.images && product.images.length > 0 ? (
+                    <td className="px-6 py-4 whitespace-nowrap">                      <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden mr-3">
+                        {(() => {
+                          const validImages = filterValidImageUrls(product.images);
+                          return validImages && validImages.length > 0 ? (
                             <img
-                              src={product.images[0] || "/placeholder.svg"}
+                              src={validImages[0] || "/placeholder.svg"}
                               alt={product.name}
                               className="w-full h-full object-cover"
                             />
@@ -162,18 +164,19 @@ const ProductsPage = () => {
                             <div className="w-full h-full flex items-center justify-center">
                               <FaBox className="text-green-500" />
                             </div>
-                          )}
+                          );
+                        })()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {product.name}
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {product.name}
-                          </div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {product.description.substring(0, 50)}
-                            {product.description.length > 50 ? "..." : ""}
-                          </div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                          {product.description.substring(0, 50)}
+                          {product.description.length > 50 ? "..." : ""}
                         </div>
                       </div>
+                    </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="text-sm text-gray-900">

@@ -60,25 +60,100 @@ const AddProductPage = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
-  };
-  const handleImageChange = (e) => {
+  }; const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
 
-    // Create local preview URLs for immediate display
-    const newImagePreviewUrls = files.map((file) => URL.createObjectURL(file));
+    if (files.length === 0) return;
 
-    // Update state with preview images
-    setImagePreviewUrls([...imagePreviewUrls, ...newImagePreviewUrls]);
+    // Clear input value to allow re-selecting the same files
+    e.target.value = '';
 
-    // Store the actual file objects for later upload during form submission
-    setFormData({
-      ...formData,
-      imageFiles: [...(formData.imageFiles || []), ...files],
-      // Keep the previous images array for backend compatibility
-      images: [...formData.images],
-    });
+    try {
+      // Import the upload utility
+      const { uploadProductImages, validateImages } = await import('../../utils/imageUpload');
+
+      // Validate images before attempting to upload
+      const validation = validateImages(files);
+      if (!validation.valid) {
+        setErrors({
+          ...errors,
+          images: validation.errors[0] // Show the first error
+        });
+        return;
+      }
+
+      // Set upload state
+      setUploadState(prev => ({
+        ...prev,
+        isUploading: true,
+        progress: 0,
+        uploadError: null
+      }));
+
+      // Upload images immediately to Cloudinary
+      const imageUrls = await uploadProductImages(files, {
+        validate: false, // Already validated
+        onUploadStart: () => {
+          setUploadState(prev => ({
+            ...prev,
+            isUploading: true,
+            progress: 0,
+            uploadError: null
+          }));
+        },
+        onProgress: (progress) => {
+          setUploadState(prev => ({
+            ...prev,
+            progress
+          }));
+        },
+        onUploadComplete: () => {
+          setUploadState(prev => ({
+            ...prev,
+            isUploading: false,
+            uploadComplete: true
+          }));
+        }
+      });
+
+      // Validate that we received valid Cloudinary URLs
+      const validImageUrls = imageUrls.filter(url =>
+        typeof url === 'string' &&
+        (url.startsWith('http://') || url.startsWith('https://')) &&
+        !url.startsWith('blob:')
+      );
+
+      if (validImageUrls.length === 0) {
+        throw new Error('No valid image URLs received from upload');
+      }
+
+      // Update state with validated Cloudinary URLs only
+      const newImages = [...formData.images, ...validImageUrls];
+      setImagePreviewUrls([...imagePreviewUrls, ...validImageUrls]);
+      setFormData({
+        ...formData,
+        images: newImages,
+      });
+
+      // Clear any previous errors
+      if (errors.images) {
+        const newErrors = { ...errors };
+        delete newErrors.images;
+        setErrors(newErrors);
+      }
+
+    } catch (error) {
+      setUploadState(prev => ({
+        ...prev,
+        isUploading: false,
+        uploadError: error.message || 'Failed to upload images. Please try again.'
+      }));
+      setErrors({
+        ...errors,
+        images: error.message || 'Failed to upload images. Please try again.'
+      });
+    }
   };
-
   const removeImage = (index) => {
     const newImagePreviewUrls = [...imagePreviewUrls];
     const newImages = [...formData.images];
@@ -113,78 +188,13 @@ const AddProductPage = () => {
 
     if (validateForm()) {
       try {
-        // Reset upload state
-        setUploadState({
-          isUploading: false,
-          progress: 0,
-          uploadComplete: false,
-          uploadError: null
-        });
-
-        // If we have image files to upload
-        if (formData.imageFiles && formData.imageFiles.length > 0) {
-          // Import the upload utility dynamically to avoid cyclic dependencies
-          const { uploadProductImages, validateImages } = await import('../../utils/imageUpload');
-
-          // Validate images before attempting to upload
-          const validation = validateImages(formData.imageFiles);
-          if (!validation.valid) {
-            setErrors({
-              ...errors,
-              images: validation.errors[0] // Show the first error
-            });
-            return;
-          }
-
-          // Upload images with progress tracking
-          const imageUrls = await uploadProductImages(formData.imageFiles, {
-            validate: false, // Already validated
-            onUploadStart: () => {
-              setUploadState(prev => ({
-                ...prev,
-                isUploading: true,
-                progress: 0,
-                uploadError: null
-              }));
-            },
-            onProgress: (progress) => {
-              setUploadState(prev => ({
-                ...prev,
-                progress
-              }));
-            },
-            onUploadComplete: () => {
-              setUploadState(prev => ({
-                ...prev,
-                isUploading: false,
-                uploadComplete: true
-              }));
-            }
-          });
-
-          // Create product with the Cloudinary URLs
-          const productData = {
-            ...formData,
-            images: imageUrls,
-          };
-
-          // Remove the temporary imageFiles field before sending to API
-          delete productData.imageFiles;
-
-          dispatch(createProduct(productData));
-        } else {
-          // No images to upload, just create the product
-          dispatch(createProduct(formData));
-        }
+        // Images are already uploaded to Cloudinary and stored in formData.images
+        // Just create the product with the existing image URLs
+        dispatch(createProduct(formData));
       } catch (error) {
-        setUploadState(prev => ({
-          ...prev,
-          isUploading: false,
-          uploadError: error.message || 'Failed to upload images. Please try again.'
-        }));
         setErrors({
           ...errors,
-          images: error.message || 'Failed to upload images. Please try again.'
+          submit: error.message || 'Failed to create product. Please try again.'
         });
       }
     }

@@ -19,8 +19,7 @@ const EditProductPage = () => {
   const { product, loading, success } = useSelector((state) => state.products);
   const { categories, loading: categoriesLoading } = useSelector(
     (state) => state.categories
-  );
-  const [formData, setFormData] = useState({
+  ); const [formData, setFormData] = useState({
     name: "",
     description: "",
     category: "",
@@ -28,7 +27,6 @@ const EditProductPage = () => {
     unit: "lb",
     quantityAvailable: "",
     images: [],
-    imageFiles: [], // For storing new File objects to upload
     isOrganic: false,
     harvestDate: "",
     availableUntil: "",
@@ -48,8 +46,7 @@ const EditProductPage = () => {
   useEffect(() => {
     dispatch(getProductDetails(id));
     dispatch(getCategories());
-  }, [dispatch, id]);
-  useEffect(() => {
+  }, [dispatch, id]); useEffect(() => {
     if (product) {
       setFormData({
         name: product.name || "",
@@ -59,7 +56,6 @@ const EditProductPage = () => {
         unit: product.unit || "lb",
         quantityAvailable: product.quantityAvailable || "",
         images: product.images || [],
-        imageFiles: [], // Initialize as empty array for new uploads
         isOrganic: product.isOrganic || false,
         harvestDate: product.harvestDate
           ? new Date(product.harvestDate).toISOString().split("T")[0]
@@ -87,49 +83,112 @@ const EditProductPage = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
-  }; const handleImageChange = (e) => {
+  }; const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
 
-    // Create local preview URLs for immediate display
-    const newImagePreviewUrls = files.map((file) => URL.createObjectURL(file));
+    if (files.length === 0) return;
 
-    // Update preview URLs (combine existing URLs with new ones)
-    setImagePreviewUrls([...imagePreviewUrls, ...newImagePreviewUrls]);
+    // Clear input value to allow re-selecting the same files
+    e.target.value = '';
 
-    // Store the actual file objects for later upload
-    setFormData({
-      ...formData,
-      imageFiles: [...(formData.imageFiles || []), ...files],
-      // Keep previous images that are already on Cloudinary
-      images: formData.images || [],
-    });
-  };
-  const removeImage = (index) => {
-    const newImagePreviewUrls = [...imagePreviewUrls];
-    const existingImagesCount = formData.images ? formData.images.length : 0;
+    try {
+      // Import the upload utility
+      const { uploadProductImages, validateImages } = await import('../../utils/imageUpload');
 
-    // Remove the preview URL
-    newImagePreviewUrls.splice(index, 1);
-    setImagePreviewUrls(newImagePreviewUrls);
+      // Validate images before attempting to upload
+      const validation = validateImages(files);
+      if (!validation.valid) {
+        setErrors({
+          ...errors,
+          images: validation.errors[0] // Show the first error
+        });
+        return;
+      }
 
-    if (index < existingImagesCount) {
-      // Removing an existing image (from Cloudinary)
-      const newImages = [...formData.images];
-      newImages.splice(index, 1);
+      // Set upload state
+      setUploadState(prev => ({
+        ...prev,
+        isUploading: true,
+        progress: 0,
+        uploadError: null
+      }));
+
+      // Upload images immediately to Cloudinary
+      const imageUrls = await uploadProductImages(files, {
+        validate: false, // Already validated
+        onUploadStart: () => {
+          setUploadState(prev => ({
+            ...prev,
+            isUploading: true,
+            progress: 0,
+            uploadError: null
+          }));
+        },
+        onProgress: (progress) => {
+          setUploadState(prev => ({
+            ...prev,
+            progress
+          }));
+        },
+        onUploadComplete: () => {
+          setUploadState(prev => ({
+            ...prev,
+            isUploading: false,
+            uploadComplete: true
+          }));
+        }
+      });
+
+      // Validate that we received valid Cloudinary URLs
+      const validImageUrls = imageUrls.filter(url =>
+        typeof url === 'string' &&
+        (url.startsWith('http://') || url.startsWith('https://')) &&
+        !url.startsWith('blob:')
+      );
+
+      if (validImageUrls.length === 0) {
+        throw new Error('No valid image URLs received from upload');
+      }
+
+      // Update state with validated Cloudinary URLs only (combine with existing images)
+      const newImages = [...(formData.images || []), ...validImageUrls];
+      setImagePreviewUrls([...imagePreviewUrls, ...validImageUrls]);
       setFormData({
         ...formData,
         images: newImages,
       });
-    } else {
-      // Removing a newly uploaded file
-      const newFileIndex = index - existingImagesCount;
-      const newImageFiles = [...(formData.imageFiles || [])];
-      newImageFiles.splice(newFileIndex, 1);
-      setFormData({
-        ...formData,
-        imageFiles: newImageFiles,
+
+      // Clear any previous errors
+      if (errors.images) {
+        const newErrors = { ...errors };
+        delete newErrors.images;
+        setErrors(newErrors);
+      }
+
+    } catch (error) {
+      setUploadState(prev => ({
+        ...prev,
+        isUploading: false,
+        uploadError: error.message || 'Failed to upload images. Please try again.'
+      }));
+      setErrors({
+        ...errors,
+        images: error.message || 'Failed to upload images. Please try again.'
       });
     }
+  }; const removeImage = (index) => {
+    const newImagePreviewUrls = [...imagePreviewUrls];
+    const newImages = [...(formData.images || [])];
+
+    // Remove the preview URL and the corresponding image URL
+    newImagePreviewUrls.splice(index, 1);
+    newImages.splice(index, 1);
+
+    setImagePreviewUrls(newImagePreviewUrls);
+    setFormData({
+      ...formData,
+      images: newImages,
+    });
   };
 
   const validateForm = () => {
@@ -145,73 +204,18 @@ const EditProductPage = () => {
       newErrors.quantityAvailable = "Valid quantity is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-  const handleSubmit = async (e) => {
+  }; const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validateForm()) {
       try {
-        let updatedFormData = { ...formData };
-
-        // If we have new image files to upload
-        if (formData.imageFiles && formData.imageFiles.length > 0) {
-          // Import the upload utility dynamically
-          const { uploadProductImages, validateImages } = await import('../../utils/imageUpload');
-
-          // Validate images before attempting to upload
-          const validation = validateImages(formData.imageFiles);
-          if (!validation.valid) {
-            setErrors({
-              ...errors,
-              images: validation.errors[0] // Show the first error
-            });
-            return;
-          }
-
-          // Show loading state
-          setFormData({ ...formData, uploading: true });          // Upload new images to Cloudinary with progress tracking
-          const newImageUrls = await uploadProductImages(formData.imageFiles, {
-            validate: false,
-            onUploadStart: () => {
-              setUploadState(prev => ({
-                ...prev,
-                isUploading: true,
-                progress: 0,
-                uploadError: null
-              }));
-            },
-            onProgress: (progress) => {
-              setUploadState(prev => ({
-                ...prev,
-                progress
-              }));
-            },
-            onUploadComplete: () => {
-              setUploadState(prev => ({
-                ...prev,
-                isUploading: false,
-                uploadComplete: true
-              }));
-            }
-          });          // Combine existing Cloudinary images with new ones
-          updatedFormData = {
-            ...formData,
-            images: [...formData.images.filter(img => img.startsWith('http')), ...newImageUrls]
-          };
-
-          // Remove temporary fields
-          delete updatedFormData.imageFiles;
-        }        // Update the product
-        dispatch(updateProduct({ id, productData: updatedFormData }));
+        // Images are already uploaded to Cloudinary and stored in formData.images
+        // Just update the product with the existing image URLs
+        dispatch(updateProduct({ id, productData: formData }));
       } catch (error) {
-        setUploadState(prev => ({
-          ...prev,
-          isUploading: false,
-          uploadError: error.message || 'Failed to upload images. Please try again.'
-        }));
         setErrors({
           ...errors,
-          images: error.message || 'Failed to upload images. Please try again.'
+          submit: error.message || 'Failed to update product. Please try again.'
         });
       }
     }

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
 import axiosInstance from "../../utils/axiosConfig";
+import { cleanProductsImages, cleanProductImages } from "../../utils/imageCleanup";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -154,7 +155,8 @@ const productSlice = createSlice({
       })
       .addCase(getProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = action.payload.data;
+        // Clean any blob URLs from the products data
+        state.products = cleanProductsImages(action.payload.data);
       })
       .addCase(getProducts.rejected, (state, action) => {
         state.loading = false;
@@ -167,7 +169,8 @@ const productSlice = createSlice({
       })
       .addCase(getProductDetails.fulfilled, (state, action) => {
         state.loading = false;
-        state.product = action.payload.data;
+        // Clean any blob URLs from the product data
+        state.product = cleanProductImages(action.payload.data);
       })
       .addCase(getProductDetails.rejected, (state, action) => {
         state.loading = false;
@@ -183,7 +186,8 @@ const productSlice = createSlice({
       })
       .addCase(getFarmerProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.farmerProducts = action.payload.data;
+        // Clean any blob URLs from the farmer products data
+        state.farmerProducts = cleanProductsImages(action.payload.data);
       })
       .addCase(getFarmerProducts.rejected, (state, action) => {
         state.loading = false;
@@ -198,7 +202,9 @@ const productSlice = createSlice({
       .addCase(createProduct.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.farmerProducts.push(action.payload.data);
+        // Clean any blob URLs from the new product data
+        const cleanedProduct = cleanProductImages(action.payload.data);
+        state.farmerProducts.push(cleanedProduct);
         toast.success("Product created successfully!");
       })
       .addCase(createProduct.rejected, (state, action) => {
@@ -215,10 +221,10 @@ const productSlice = createSlice({
       .addCase(updateProduct.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
+        // Clean any blob URLs from the updated product data
+        const cleanedProduct = cleanProductImages(action.payload.data);
         state.farmerProducts = state.farmerProducts.map((product) =>
-          product._id === action.payload.data._id
-            ? action.payload.data
-            : product
+          product._id === cleanedProduct._id ? cleanedProduct : product
         );
         toast.success("Product updated successfully!");
       })

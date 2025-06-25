@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { placeholder } from "../assets";
+import { filterValidImageUrls } from "../utils/imageCleanup";
 
 const ProductCard = ({ product }) => {
   const handleImageError = (e) => {
@@ -7,12 +8,15 @@ const ProductCard = ({ product }) => {
     e.target.src = placeholder;
   };
 
+  // Filter out any blob URLs for safety
+  const validImages = filterValidImageUrls(product.images);
+
   return (
     <div className="card transition-transform duration-300">
       <div className="relative h-48 overflow-hidden rounded-t-xl">
-        {product.images && product.images.length > 0 ? (
+        {validImages && validImages.length > 0 ? (
           <img
-            src={product.images[0]}
+            src={validImages[0]}
             alt={product.name}
             onError={handleImageError}
             className="w-full h-56 object-cover"
@@ -31,11 +35,10 @@ const ProductCard = ({ product }) => {
             Organic
           </span>
         )}
-        <span className={`absolute top-2 left-2 px-2 py-1 text-xs font-semibold rounded-full ${
-          product.quantityAvailable > 0 
-            ? "bg-green-100 text-green-800" 
+        <span className={`absolute top-2 left-2 px-2 py-1 text-xs font-semibold rounded-full ${product.quantityAvailable > 0
+            ? "bg-green-100 text-green-800"
             : "bg-red-100 text-red-800"
-        }`}>
+          }`}>
           {product.quantityAvailable > 0 ? "In Stock" : "Out of Stock"}
         </span>
       </div>

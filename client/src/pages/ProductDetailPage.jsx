@@ -17,6 +17,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import { placeholder } from "../assets";
+import { filterValidImageUrls } from "../utils/imageCleanup";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -120,7 +121,6 @@ const ProductDetailPage = () => {
       </div>
     );
   }
-
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex items-center mb-6">
@@ -136,37 +136,44 @@ const ProductDetailPage = () => {
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="md:flex">
           <div className="md:w-1/2">
-            <div className="relative h-96">
-              <img
-                src={product.images && product.images[activeImage]}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                onError={handleImageError}
-              />
-              <div className="absolute top-4 right-4 bg-green-100 rounded-full p-2">
-                <FaLeaf className="text-green-600" />
-              </div>
-            </div>
-
-            {product.images && product.images.length > 1 && (
-              <div className="flex p-4 gap-2 overflow-x-auto">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${activeImage === index ? "border-green-500" : "border-gray-200"
-                      }`}
-                    onClick={() => setActiveImage(index)}
-                  >
+            {(() => {
+              const validImages = filterValidImageUrls(product.images);
+              return (
+                <>
+                  <div className="relative h-96">
                     <img
-                      src={image}
-                      alt={`${product.name} - ${index + 1}`}
+                      src={validImages && validImages[activeImage]}
+                      alt={product.name}
                       className="w-full h-full object-cover"
                       onError={handleImageError}
                     />
-                  </button>
-                ))}
-              </div>
-            )}
+                    <div className="absolute top-4 right-4 bg-green-100 rounded-full p-2">
+                      <FaLeaf className="text-green-600" />
+                    </div>
+                  </div>
+
+                  {validImages && validImages.length > 1 && (
+                    <div className="flex p-4 gap-2 overflow-x-auto">
+                      {validImages.map((image, index) => (
+                        <button
+                          key={index}
+                          className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${activeImage === index ? "border-green-500" : "border-gray-200"
+                            }`}
+                          onClick={() => setActiveImage(index)}
+                        >
+                          <img
+                            src={image}
+                            alt={`${product.name} - ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={handleImageError}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <div className="md:w-1/2 p-6 md:p-8">

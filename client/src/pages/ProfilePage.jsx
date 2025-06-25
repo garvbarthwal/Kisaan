@@ -238,28 +238,86 @@ const ProfilePage = () => {
         (_, i) => i !== index
       ),
     });
-  };
-  const handleFarmImageChange = (e) => {
+  }; const handleFarmImageChange = async (e) => {
     const files = Array.from(e.target.files);
-    processNewFarmImages(files);
+    await processNewFarmImages(files);
   };
 
-  const processNewFarmImages = (files) => {
+  const processNewFarmImages = async (files) => {
     if (files.length === 0) return;
 
-    // Create local preview URLs for immediate display
-    const newImagePreviewUrls = files.map((file) => URL.createObjectURL(file));
+    try {      // Import the upload utility
+      const { uploadProductImages, validateImages } = await import('../utils/imageUpload');
 
-    // Update preview URLs (combine existing URLs with new ones)
-    setFarmImagePreviewUrls([...farmImagePreviewUrls, ...newImagePreviewUrls]);
+      // Validate images before attempting to upload
+      const validation = validateImages(files);
+      if (!validation.valid) {
+        // Handle validation error - you might want to add error state for farm images
+        console.error('Farm image validation failed:', validation.errors);
+        return;
+      }
 
-    // Store the actual file objects for later upload
-    setFarmerForm({
-      ...farmerForm,
-      farmImageFiles: [...(farmerForm.farmImageFiles || []), ...files],
-      // Keep previous images that are already on Cloudinary
-      farmImages: farmerForm.farmImages || [],
-    });
+      // Set upload state
+      setFarmImageUploadState(prev => ({
+        ...prev,
+        isUploading: true,
+        progress: 0,
+        uploadError: null
+      }));
+
+      // Upload images immediately to Cloudinary
+      const imageUrls = await uploadProductImages(files, {
+        validate: false, // Already validated
+        onUploadStart: () => {
+          setFarmImageUploadState(prev => ({
+            ...prev,
+            isUploading: true,
+            progress: 0,
+            uploadError: null
+          }));
+        },
+        onProgress: (progress) => {
+          setFarmImageUploadState(prev => ({
+            ...prev,
+            progress
+          }));
+        },
+        onUploadComplete: () => {
+          setFarmImageUploadState(prev => ({
+            ...prev,
+            isUploading: false,
+            uploadComplete: true
+          }));
+        }
+      });
+
+      // Validate that we received valid Cloudinary URLs
+      const validImageUrls = imageUrls.filter(url =>
+        typeof url === 'string' &&
+        (url.startsWith('http://') || url.startsWith('https://')) &&
+        !url.startsWith('blob:')
+      );
+
+      if (validImageUrls.length === 0) {
+        throw new Error('No valid image URLs received from upload');
+      }
+
+      // Update state with validated Cloudinary URLs only (combine with existing images)
+      const newImages = [...(farmerForm.farmImages || []), ...validImageUrls];
+      setFarmImagePreviewUrls([...farmImagePreviewUrls, ...validImageUrls]);
+      setFarmerForm({
+        ...farmerForm,
+        farmImages: newImages,
+      });
+
+    } catch (error) {
+      setFarmImageUploadState(prev => ({
+        ...prev,
+        isUploading: false,
+        uploadError: error.message || 'Failed to upload images. Please try again.'
+      }));
+      console.error('Farm image upload failed:', error);
+    }
   };
 
   const handleDragOver = (e) => {

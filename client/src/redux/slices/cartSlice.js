@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
+import { filterValidImageUrls } from "../../utils/imageCleanup";
 
 // Get cart from localStorage
 const cartItemsFromStorage = localStorage.getItem("cartItems")
@@ -56,13 +57,13 @@ const cartSlice = createSlice({
           );
           toast.info(`Updated ${product.name} quantity in your cart`);
         } else {
+          // Filter valid images before storing
+          const validImages = filterValidImageUrls(product.images);
+
           state.cartItems.push({
             productId: product._id,
             name: product.name,
-            image:
-              product.images && product.images.length > 0
-                ? product.images[0]
-                : null,
+            image: validImages && validImages.length > 0 ? validImages[0] : null,
             price: product.price,
             quantity,
             unit: product.unit,
