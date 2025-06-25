@@ -13,6 +13,7 @@ import {
   FaComment,
   FaTimes,
 } from "react-icons/fa";
+import { isValidObjectId } from "../utils/objectId";
 
 const OrderDetailPage = () => {
   const { id } = useParams();
@@ -24,7 +25,12 @@ const OrderDetailPage = () => {
   const { order, loading } = useSelector((state) => state.orders);
   const { user } = useSelector((state) => state.auth);
   useEffect(() => {
-    dispatch(getOrderDetails(id));
+    if (isValidObjectId(id)) {
+      dispatch(getOrderDetails(id));
+    } else {
+      // Optionally, show an error or redirect
+      // e.g., navigate("/not-found");
+    }
   }, [dispatch, id]);
 
   // Function to check if order can be cancelled
