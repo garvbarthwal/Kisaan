@@ -8,6 +8,7 @@ const {
   getFarmerProducts,
 } = require("../controllers/productController");
 const { verifyToken, isFarmer } = require("../utils/authMiddleware");
+const { uploadProductImages } = require("../utils/cloudinary");
 
 const router = express.Router();
 
@@ -16,8 +17,8 @@ router.get("/", getAllProducts);
 router.get("/:id", getProduct);
 
 // Farmer routes
-router.post("/", verifyToken, isFarmer, createProduct);
-router.put("/:id", verifyToken, isFarmer, updateProduct);
+router.post("/", verifyToken, isFarmer, uploadProductImages, createProduct);
+router.put("/:id", verifyToken, isFarmer, uploadProductImages, updateProduct);
 router.delete("/:id", verifyToken, isFarmer, deleteProduct);
 router.get("/farmer/me", verifyToken, isFarmer, getFarmerProducts);
 

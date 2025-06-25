@@ -8,6 +8,7 @@ import {
 } from "../../redux/slices/productSlice";
 import { getCategories } from "../../redux/slices/categorySlice";
 import Loader from "../../components/Loader";
+import UploadProgress from "../../components/UploadProgress";
 import { FaArrowLeft, FaUpload, FaTimes } from "react-icons/fa";
 
 const EditProductPage = () => {
@@ -19,7 +20,6 @@ const EditProductPage = () => {
   const { categories, loading: categoriesLoading } = useSelector(
     (state) => state.categories
   );
-
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -28,20 +28,27 @@ const EditProductPage = () => {
     unit: "lb",
     quantityAvailable: "",
     images: [],
+    imageFiles: [], // For storing new File objects to upload
     isOrganic: false,
     harvestDate: "",
     availableUntil: "",
     isActive: true,
   });
-
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
   const [errors, setErrors] = useState({});
+
+  // Upload progress states
+  const [uploadState, setUploadState] = useState({
+    isUploading: false,
+    progress: 0,
+    uploadComplete: false,
+    uploadError: null
+  });
 
   useEffect(() => {
     dispatch(getProductDetails(id));
     dispatch(getCategories());
   }, [dispatch, id]);
-
   useEffect(() => {
     if (product) {
       setFormData({
@@ -52,6 +59,7 @@ const EditProductPage = () => {
         unit: product.unit || "lb",
         quantityAvailable: product.quantityAvailable || "",
         images: product.images || [],
+        imageFiles: [], // Initialize as empty array for new uploads
         isOrganic: product.isOrganic || false,
         harvestDate: product.harvestDate
           ? new Date(product.harvestDate).toISOString().split("T")[0]
@@ -61,6 +69,7 @@ const EditProductPage = () => {
           : "",
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
+      // Set preview URLs to existing images
       setImagePreviewUrls(product.images || []);
     }
   }, [product]);
@@ -78,28 +87,49 @@ const EditProductPage = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
-  };
-
-  const handleImageChange = (e) => {
+  }; const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+
+    // Create local preview URLs for immediate display
     const newImagePreviewUrls = files.map((file) => URL.createObjectURL(file));
+
+    // Update preview URLs (combine existing URLs with new ones)
     setImagePreviewUrls([...imagePreviewUrls, ...newImagePreviewUrls]);
+
+    // Store the actual file objects for later upload
     setFormData({
       ...formData,
-      images: [...formData.images, ...newImagePreviewUrls],
+      imageFiles: [...(formData.imageFiles || []), ...files],
+      // Keep previous images that are already on Cloudinary
+      images: formData.images || [],
     });
   };
-
   const removeImage = (index) => {
     const newImagePreviewUrls = [...imagePreviewUrls];
-    const newImages = [...formData.images];
+    const existingImagesCount = formData.images ? formData.images.length : 0;
+
+    // Remove the preview URL
     newImagePreviewUrls.splice(index, 1);
-    newImages.splice(index, 1);
     setImagePreviewUrls(newImagePreviewUrls);
-    setFormData({
-      ...formData,
-      images: newImages,
-    });
+
+    if (index < existingImagesCount) {
+      // Removing an existing image (from Cloudinary)
+      const newImages = [...formData.images];
+      newImages.splice(index, 1);
+      setFormData({
+        ...formData,
+        images: newImages,
+      });
+    } else {
+      // Removing a newly uploaded file
+      const newFileIndex = index - existingImagesCount;
+      const newImageFiles = [...(formData.imageFiles || [])];
+      newImageFiles.splice(newFileIndex, 1);
+      setFormData({
+        ...formData,
+        imageFiles: newImageFiles,
+      });
+    }
   };
 
   const validateForm = () => {
@@ -116,11 +146,74 @@ const EditProductPage = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (validateForm()) {
-      dispatch(updateProduct({ id, productData: formData }));
+      try {
+        let updatedFormData = { ...formData };
+
+        // If we have new image files to upload
+        if (formData.imageFiles && formData.imageFiles.length > 0) {
+          // Import the upload utility dynamically
+          const { uploadProductImages, validateImages } = await import('../../utils/imageUpload');
+
+          // Validate images before attempting to upload
+          const validation = validateImages(formData.imageFiles);
+          if (!validation.valid) {
+            setErrors({
+              ...errors,
+              images: validation.errors[0] // Show the first error
+            });
+            return;
+          }
+
+          // Show loading state
+          setFormData({ ...formData, uploading: true });          // Upload new images to Cloudinary with progress tracking
+          const newImageUrls = await uploadProductImages(formData.imageFiles, {
+            validate: false,
+            onUploadStart: () => {
+              setUploadState(prev => ({
+                ...prev,
+                isUploading: true,
+                progress: 0,
+                uploadError: null
+              }));
+            },
+            onProgress: (progress) => {
+              setUploadState(prev => ({
+                ...prev,
+                progress
+              }));
+            },
+            onUploadComplete: () => {
+              setUploadState(prev => ({
+                ...prev,
+                isUploading: false,
+                uploadComplete: true
+              }));
+            }
+          });          // Combine existing Cloudinary images with new ones
+          updatedFormData = {
+            ...formData,
+            images: [...formData.images.filter(img => img.startsWith('http')), ...newImageUrls]
+          };
+
+          // Remove temporary fields
+          delete updatedFormData.imageFiles;
+        }        // Update the product
+        dispatch(updateProduct({ id, productData: updatedFormData }));
+      } catch (error) {
+        setUploadState(prev => ({
+          ...prev,
+          isUploading: false,
+          uploadError: error.message || 'Failed to upload images. Please try again.'
+        }));
+        setErrors({
+          ...errors,
+          images: error.message || 'Failed to upload images. Please try again.'
+        });
+      }
     }
   };
 
@@ -195,9 +288,8 @@ const EditProductPage = () => {
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className={`form-input ${
-                  errors.category ? "border-red-500" : ""
-                }`}
+                className={`form-input ${errors.category ? "border-red-500" : ""
+                  }`}
                 required
               >
                 <option value="">Select a category</option>
@@ -226,9 +318,8 @@ const EditProductPage = () => {
               rows="4"
               value={formData.description}
               onChange={handleChange}
-              className={`form-input ${
-                errors.description ? "border-red-500" : ""
-              }`}
+              className={`form-input ${errors.description ? "border-red-500" : ""
+                }`}
               placeholder="Describe your product..."
               required
             ></textarea>
@@ -255,9 +346,8 @@ const EditProductPage = () => {
                   name="price"
                   value={formData.price}
                   onChange={handleChange}
-                  className={`form-input pl-7 ${
-                    errors.price ? "border-red-500" : ""
-                  }`}
+                  className={`form-input pl-7 ${errors.price ? "border-red-500" : ""
+                    }`}
                   step="0.01"
                   min="0"
                   required
@@ -312,9 +402,8 @@ const EditProductPage = () => {
                 name="quantityAvailable"
                 value={formData.quantityAvailable}
                 onChange={handleChange}
-                className={`form-input ${
-                  errors.quantityAvailable ? "border-red-500" : ""
-                }`}
+                className={`form-input ${errors.quantityAvailable ? "border-red-500" : ""
+                  }`}
                 min="0"
                 required
               />
@@ -417,8 +506,17 @@ const EditProductPage = () => {
               </label>
               <span className="text-sm text-gray-500">
                 Upload up to 5 images
-              </span>
-            </div>
+              </span>            </div>
+
+            {/* Upload Progress Component */}
+            <UploadProgress
+              isUploading={uploadState.isUploading}
+              progress={uploadState.progress}
+              uploadComplete={uploadState.uploadComplete}
+              uploadError={uploadState.uploadError}
+              fileCount={formData.imageFiles?.length || 0}
+              className="mt-4"
+            />
 
             {imagePreviewUrls.length > 0 && (
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -448,13 +546,17 @@ const EditProductPage = () => {
               className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
               Cancel
-            </Link>
-            <button
+            </Link>            <button
               type="submit"
               className="btn btn-primary"
-              disabled={loading}
+              disabled={loading || uploadState.isUploading}
             >
-              {loading ? "Saving..." : "Save Changes"}
+              {uploadState.isUploading
+                ? `Uploading... ${uploadState.progress}%`
+                : loading
+                  ? "Saving..."
+                  : "Save Changes"
+              }
             </button>
           </div>
         </form>

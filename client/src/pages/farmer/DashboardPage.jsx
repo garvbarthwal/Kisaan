@@ -29,36 +29,29 @@ const DashboardPage = () => {
   const { conversations, loading: messagesLoading } = useSelector(
     (state) => state.messages
   );
-  const { user } = useSelector((state) => state.auth);
-
-  useEffect(() => {
-    console.log("Dispatching farmer data requests");
+  const { user } = useSelector((state) => state.auth); useEffect(() => {
     dispatch(getFarmerProducts());
     dispatch(getFarmerOrders());
     dispatch(getConversations());
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log("Farmer orders data:", farmerOrders);
-  }, [farmerOrders]);
-
   const orderCounts = {
     pending: ordersLoading
       ? 0
       : farmerOrders.filter(
-          (order) => 
-            order.status === "pending" || 
-            (order.status === "accepted" && 
-             order.deliveryDetails && 
-             !order.deliveryDetails.isDateFinalized)
-        ).length,
+        (order) =>
+          order.status === "pending" ||
+          (order.status === "accepted" &&
+            order.deliveryDetails &&
+            !order.deliveryDetails.isDateFinalized)
+      ).length,
     accepted: ordersLoading
       ? 0
       : farmerOrders.filter(
-          (order) => 
-            order.status === "accepted" && 
-            (!order.deliveryDetails || order.deliveryDetails.isDateFinalized)
-        ).length,
+        (order) =>
+          order.status === "accepted" &&
+          (!order.deliveryDetails || order.deliveryDetails.isDateFinalized)
+      ).length,
     completed: ordersLoading
       ? 0
       : farmerOrders.filter((order) => order.status === "completed").length,
@@ -230,14 +223,13 @@ const DashboardPage = () => {
                     </td>
                     <td className="text-center py-3">
                       <span
-                        className={`badge ${
-                          order.status === "pending" || 
-                          (order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized)
+                        className={`badge ${order.status === "pending" ||
+                            (order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized)
                             ? "badge-blue"
                             : order.status === "accepted" || order.status === "completed"
                               ? "badge-green"
                               : "badge-red"
-                        }`}
+                          }`}
                       >
                         {order.status === "accepted" && order.deliveryDetails && !order.deliveryDetails.isDateFinalized
                           ? "Awaiting Delivery Details"

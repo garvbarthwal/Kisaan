@@ -75,7 +75,7 @@ const CheckoutPage = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowString = tomorrow.toISOString().split('T')[0];
-    
+
     setOrderDetails(prev => ({
       ...prev,
       pickupDetails: {
@@ -146,8 +146,8 @@ const CheckoutPage = () => {
         return;
       }
     } else {
-      if (!orderDetails.deliveryDetails.address.street || !orderDetails.deliveryDetails.address.city || 
-          !orderDetails.deliveryDetails.address.state || !orderDetails.deliveryDetails.date || !orderDetails.deliveryDetails.time) {
+      if (!orderDetails.deliveryDetails.address.street || !orderDetails.deliveryDetails.address.city ||
+        !orderDetails.deliveryDetails.address.state || !orderDetails.deliveryDetails.date || !orderDetails.deliveryDetails.time) {
         alert("Please fill in all delivery details (address, date, and time)");
         return;
       }
@@ -162,17 +162,13 @@ const CheckoutPage = () => {
 
     // Prepare order details with proper date formatting
     let orderDetailsToSend = {};
-    
+
     if (orderType === "pickup") {
       orderDetailsToSend.pickupDetails = {
         ...orderDetails.pickupDetails,
         date: orderDetails.pickupDetails.date || null
       };
-      console.log("Pickup date being sent:", orderDetails.pickupDetails.date);
     } else {
-      console.log("Delivery date string from form:", orderDetails.deliveryDetails.date);
-      console.log("Delivery time from form:", orderDetails.deliveryDetails.time);
-      
       orderDetailsToSend.deliveryDetails = {
         address: orderDetails.deliveryDetails.address,
         requestedDate: orderDetails.deliveryDetails.date || null,
@@ -181,11 +177,7 @@ const CheckoutPage = () => {
         finalizedTime: "",
         isDateFinalized: false
       };
-      
-      console.log("Final delivery details being sent:", orderDetailsToSend.deliveryDetails);
-    }
-
-    const orderData = {
+    } const orderData = {
       farmer: farmerId,
       items,
       ...orderDetailsToSend,
@@ -193,7 +185,6 @@ const CheckoutPage = () => {
       notes: orderDetails.notes,
     };
 
-    console.log("Order data being sent:", orderData);
     dispatch(createOrder(orderData));
   };
 
@@ -332,11 +323,11 @@ const CheckoutPage = () => {
         <div className="lg:w-5/12">
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-2xl font-bold mb-6">Order Details</h2>
-            
+
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
               <h3 className="font-medium text-blue-800 mb-2">Order Summary</h3>
               <p className="text-sm text-blue-700">
-                {orderType === "pickup" 
+                {orderType === "pickup"
                   ? "Please select pickup date and time. Pickup will be at the farmer's location."
                   : "Please provide delivery address, date, and time details."
                 }
@@ -551,9 +542,7 @@ const CheckoutPage = () => {
                       type="time"
                       id="deliveryTime"
                       name="deliveryDetails.time"
-                      value={orderDetails.deliveryDetails.time}
-                      onChange={(e) => {
-                        console.log("Time input changed:", e.target.value);
+                      value={orderDetails.deliveryDetails.time} onChange={(e) => {
                         setOrderDetails({
                           ...orderDetails,
                           deliveryDetails: {

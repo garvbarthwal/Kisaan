@@ -7,6 +7,7 @@ import {
 } from "../../redux/slices/productSlice";
 import { getCategories } from "../../redux/slices/categorySlice";
 import Loader from "../../components/Loader";
+import UploadProgress from "../../components/UploadProgress";
 import { FaArrowLeft, FaUpload, FaTimes } from "react-icons/fa";
 
 const AddProductPage = () => {
@@ -17,7 +18,6 @@ const AddProductPage = () => {
   const { categories, loading: categoriesLoading } = useSelector(
     (state) => state.categories
   );
-
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -34,6 +34,14 @@ const AddProductPage = () => {
 
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
   const [errors, setErrors] = useState({});
+
+  // Upload progress states
+  const [uploadState, setUploadState] = useState({
+    isUploading: false,
+    progress: 0,
+    uploadComplete: false,
+    uploadError: null
+  });
 
   useEffect(() => {
     dispatch(getCategories());
@@ -53,15 +61,21 @@ const AddProductPage = () => {
       [name]: type === "checkbox" ? checked : value,
     });
   };
-
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+
+    // Create local preview URLs for immediate display
     const newImagePreviewUrls = files.map((file) => URL.createObjectURL(file));
 
+    // Update state with preview images
     setImagePreviewUrls([...imagePreviewUrls, ...newImagePreviewUrls]);
+
+    // Store the actual file objects for later upload during form submission
     setFormData({
       ...formData,
-      images: [...formData.images, ...newImagePreviewUrls],
+      imageFiles: [...(formData.imageFiles || []), ...files],
+      // Keep the previous images array for backend compatibility
+      images: [...formData.images],
     });
   };
 
@@ -94,13 +108,85 @@ const AddProductPage = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
+  }; const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validateForm()) {
-      dispatch(createProduct(formData));
+      try {
+        // Reset upload state
+        setUploadState({
+          isUploading: false,
+          progress: 0,
+          uploadComplete: false,
+          uploadError: null
+        });
+
+        // If we have image files to upload
+        if (formData.imageFiles && formData.imageFiles.length > 0) {
+          // Import the upload utility dynamically to avoid cyclic dependencies
+          const { uploadProductImages, validateImages } = await import('../../utils/imageUpload');
+
+          // Validate images before attempting to upload
+          const validation = validateImages(formData.imageFiles);
+          if (!validation.valid) {
+            setErrors({
+              ...errors,
+              images: validation.errors[0] // Show the first error
+            });
+            return;
+          }
+
+          // Upload images with progress tracking
+          const imageUrls = await uploadProductImages(formData.imageFiles, {
+            validate: false, // Already validated
+            onUploadStart: () => {
+              setUploadState(prev => ({
+                ...prev,
+                isUploading: true,
+                progress: 0,
+                uploadError: null
+              }));
+            },
+            onProgress: (progress) => {
+              setUploadState(prev => ({
+                ...prev,
+                progress
+              }));
+            },
+            onUploadComplete: () => {
+              setUploadState(prev => ({
+                ...prev,
+                isUploading: false,
+                uploadComplete: true
+              }));
+            }
+          });
+
+          // Create product with the Cloudinary URLs
+          const productData = {
+            ...formData,
+            images: imageUrls,
+          };
+
+          // Remove the temporary imageFiles field before sending to API
+          delete productData.imageFiles;
+
+          dispatch(createProduct(productData));
+        } else {
+          // No images to upload, just create the product
+          dispatch(createProduct(formData));
+        }
+      } catch (error) {
+        setUploadState(prev => ({
+          ...prev,
+          isUploading: false,
+          uploadError: error.message || 'Failed to upload images. Please try again.'
+        }));
+        setErrors({
+          ...errors,
+          images: error.message || 'Failed to upload images. Please try again.'
+        });
+      }
     }
   };
 
@@ -136,9 +222,8 @@ const AddProductPage = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className={`form-input ${
-                  errors.name ? "border-red-500" : ""
-                } pl-3`}
+                className={`form-input ${errors.name ? "border-red-500" : ""
+                  } pl-3`}
                 required
               />
               {errors.name && (
@@ -158,9 +243,8 @@ const AddProductPage = () => {
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className={`form-input ${
-                  errors.category ? "border-red-500" : ""
-                } pl-3`}
+                className={`form-input ${errors.category ? "border-red-500" : ""
+                  } pl-3`}
                 required
               >
                 <option value="">Select a category</option>
@@ -189,9 +273,8 @@ const AddProductPage = () => {
               rows="4"
               value={formData.description}
               onChange={handleChange}
-              className={`form-input ${
-                errors.description ? "border-red-500" : ""
-              } pl-3`}
+              className={`form-input ${errors.description ? "border-red-500" : ""
+                } pl-3`}
               placeholder="Describe your product..."
               required
             ></textarea>
@@ -218,9 +301,8 @@ const AddProductPage = () => {
                   name="price"
                   value={formData.price}
                   onChange={handleChange}
-                  className={`form-input pl-7 ${
-                    errors.price ? "border-red-500" : ""
-                  } pl-3`}
+                  className={`form-input pl-7 ${errors.price ? "border-red-500" : ""
+                    } pl-3`}
                   step="0.01"
                   min="0"
                   required
@@ -275,9 +357,8 @@ const AddProductPage = () => {
                 name="quantityAvailable"
                 value={formData.quantityAvailable}
                 onChange={handleChange}
-                className={`form-input ${
-                  errors.quantityAvailable ? "border-red-500" : ""
-                } pl-3`}
+                className={`form-input ${errors.quantityAvailable ? "border-red-500" : ""
+                  } pl-3`}
                 min="0"
                 required
               />
@@ -359,9 +440,7 @@ const AddProductPage = () => {
                 </label>
               </div>
             </div>
-          </div>
-
-          <div className="mb-6">
+          </div>          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Images
             </label>
@@ -377,12 +456,23 @@ const AddProductPage = () => {
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
+                  disabled={uploadState.isUploading}
                 />
               </label>
               <span className="text-sm text-gray-500">
                 Upload up to 5 images
               </span>
             </div>
+
+            {/* Upload Progress Component */}
+            <UploadProgress
+              isUploading={uploadState.isUploading}
+              progress={uploadState.progress}
+              uploadComplete={uploadState.uploadComplete}
+              uploadError={uploadState.uploadError}
+              fileCount={formData.imageFiles?.length || 0}
+              className="mt-4"
+            />
 
             {imagePreviewUrls.length > 0 && (
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -392,11 +482,11 @@ const AddProductPage = () => {
                       src={url || "/placeholder.svg"}
                       alt={`Preview ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <button
+                    />                    <button
                       type="button"
                       onClick={() => removeImage(index)}
                       className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      disabled={uploadState.isUploading}
                     >
                       <FaTimes />
                     </button>
@@ -412,13 +502,17 @@ const AddProductPage = () => {
               className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
               Cancel
-            </Link>
-            <button
+            </Link>            <button
               type="submit"
               className="btn btn-primary"
-              disabled={loading}
+              disabled={loading || uploadState.isUploading}
             >
-              {loading ? "Creating..." : "Create Product"}
+              {uploadState.isUploading
+                ? `Uploading... ${uploadState.progress}%`
+                : loading
+                  ? "Creating..."
+                  : "Create Product"
+              }
             </button>
           </div>
         </form>

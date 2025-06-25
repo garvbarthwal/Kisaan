@@ -11,11 +11,8 @@ const tokenFromStorage = localStorage.getItem("token")
 
 // Register user
 export const register = createAsyncThunk(
-  "auth/register",
-  async (userData, { rejectWithValue }) => {
+  "auth/register", async (userData, { rejectWithValue }) => {
     try {
-      console.log('Registering with data:', userData);
-
       const config = {
         headers: {
           "Content-Type": "application/json",
@@ -28,14 +25,11 @@ export const register = createAsyncThunk(
         config
       );
 
-      console.log('Registration successful:', data);
-
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       return data;
     } catch (error) {
-      console.error('Registration error:', error.response || error);
       const message =
         error.response && error.response.data.message
           ? error.response.data.message
@@ -47,11 +41,8 @@ export const register = createAsyncThunk(
 
 // Login user
 export const login = createAsyncThunk(
-  "auth/login",
-  async (userData, { rejectWithValue }) => {
+  "auth/login", async (userData, { rejectWithValue }) => {
     try {
-      console.log('Logging in with:', userData.email);
-
       const config = {
         headers: {
           "Content-Type": "application/json",
@@ -63,8 +54,6 @@ export const login = createAsyncThunk(
         userData,
         config
       );
-
-      console.log('Login successful');
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));

@@ -1,5 +1,6 @@
 const Product = require("../models/ProductModel");
 const User = require("../models/UserModel");
+const { cloudinary } = require("../utils/cloudinary");
 
 // @desc    Create a product
 // @route   POST /api/products
@@ -7,6 +8,12 @@ const User = require("../models/UserModel");
 exports.createProduct = async (req, res) => {
   try {
     req.body.farmer = req.user._id;
+
+    // Handle image uploads if present
+    if (req.files && req.files.length > 0) {
+      const imageUrls = req.files.map(file => file.path);
+      req.body.images = imageUrls;
+    }
 
     const product = await Product.create(req.body);
 
@@ -112,6 +119,27 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
+    // Handle image uploads if present
+    if (req.files && req.files.length > 0) {
+      const imageUrls = req.files.map(file => file.path);
+
+      // If keepImages field is provided, combine with existing images
+      if (req.body.keepImages && Array.isArray(req.body.keepImages)) {
+        req.body.images = [...req.body.keepImages, ...imageUrls];
+      } else {        // Delete old images from Cloudinary
+        if (product.images && product.images.length > 0) {
+          const { deleteMultipleImages } = require('../utils/cloudinary');
+          try {
+            // Use the enhanced deleteMultipleImages function
+            await deleteMultipleImages(product.images, 'kisaan/products');
+          } catch (deleteErr) {
+            console.error("Failed to delete old images:", deleteErr);
+          }
+        }
+        req.body.images = imageUrls;
+      }
+    }
+
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -149,6 +177,15 @@ exports.deleteProduct = async (req, res) => {
         success: false,
         message: "Not authorized to delete this product",
       });
+    }    // Delete product images from Cloudinary
+    if (product.images && product.images.length > 0) {
+      const { deleteMultipleImages } = require('../utils/cloudinary');
+      try {
+        // Use the enhanced deleteMultipleImages function
+        await deleteMultipleImages(product.images, 'kisaan/products');
+      } catch (deleteErr) {
+        console.error("Failed to delete images:", deleteErr);
+      }
     }
 
     // Use findByIdAndDelete instead of the deprecated remove() method

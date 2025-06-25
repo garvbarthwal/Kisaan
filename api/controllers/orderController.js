@@ -8,36 +8,23 @@ const { createNotificationHelper } = require("./notificationController");
 exports.createOrder = async (req, res) => {
   try {
     const { farmer, items, pickupDetails, deliveryDetails, notes } = req.body;
-    
-    console.log("Received order data:", req.body);
-    
+
     // Fix for delivery date issue
     let processedDeliveryDetails = null;
     if (deliveryDetails) {
-      console.log("Original delivery details received:", deliveryDetails);
-      
       // Keep the date as is without timezone conversion
       processedDeliveryDetails = {
         ...deliveryDetails,
         requestedDate: deliveryDetails.requestedDate
       };
-      
-      console.log("Processed delivery details:", processedDeliveryDetails);
-      console.log("Processed requested date:", processedDeliveryDetails.requestedDate);
-    }
-
-    // Process pickup details if provided
+    }    // Process pickup details if provided
     let processedPickupDetails = null;
     if (pickupDetails) {
-      console.log("Original pickup details received:", pickupDetails);
-      
       // Keep the date as is without timezone conversion
       processedPickupDetails = {
         ...pickupDetails,
         date: pickupDetails.date
       };
-      
-      console.log("Processed pickup details:", processedPickupDetails);
     }
 
     let totalAmount = 0;
@@ -62,7 +49,7 @@ exports.createOrder = async (req, res) => {
 
       totalAmount += product.price * item.quantity;
       item.price = product.price;
-      
+
       // Store product info for final validation
       productsToValidate.push({
         productId: product._id,
@@ -81,9 +68,7 @@ exports.createOrder = async (req, res) => {
           message: `Stock for ${productInfo.name} has changed. Available: ${currentProduct.quantityAvailable}, Requested: ${productInfo.orderedQuantity}`,
         });
       }
-    }
-
-    // Create the order (stock will be reduced when farmer accepts)
+    }    // Create the order (stock will be reduced when farmer accepts)
     const order = await Order.create({
       consumer: req.user._id,
       farmer,
@@ -94,22 +79,11 @@ exports.createOrder = async (req, res) => {
       notes,
     });
 
-    console.log("Order created with the following details:");
-    if (processedPickupDetails) {
-      console.log("Pickup date saved:", processedPickupDetails.date);
-    }
-    if (processedDeliveryDetails) {
-      console.log("Delivery requested date saved:", processedDeliveryDetails.requestedDate);
-      console.log("Delivery requested time saved:", processedDeliveryDetails.requestedTime);
-    }
-    console.log("Created order object:", JSON.stringify(order, null, 2));
-
     res.status(201).json({
       success: true,
       data: order,
     });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
@@ -135,7 +109,6 @@ exports.getConsumerOrders = async (req, res) => {
       data: orders,
     });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
@@ -161,7 +134,6 @@ exports.getFarmerOrders = async (req, res) => {
       data: orders,
     });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
@@ -202,10 +174,9 @@ exports.getOrder = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
+    .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -305,7 +276,6 @@ exports.updateOrderStatus = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
@@ -320,15 +290,12 @@ exports.getAllOrders = async (req, res) => {
     const orders = await Order.find()
       .populate("consumer", "name")
       .populate("farmer", "name")
-      .sort("-createdAt");
-
-    res.json({
-      success: true,
-      count: orders.length,
-      data: orders,
-    });
+      .sort("-createdAt"); res.json({
+        success: true,
+        count: orders.length,
+        data: orders,
+      });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
@@ -362,17 +329,10 @@ exports.finalizeDeliveryDate = async (req, res) => {
         success: false,
         message: "This order is not a delivery order",
       });
-    }
-
-    // Update delivery details
+    }    // Update delivery details
     order.deliveryDetails.finalizedDate = finalizedDate;
     order.deliveryDetails.finalizedTime = finalizedTime;
     order.deliveryDetails.isDateFinalized = true;
-
-    console.log("Finalizing delivery date:");
-    console.log("Original finalizedDate input:", finalizedDate);
-    console.log("Processed finalizedDate:", order.deliveryDetails.finalizedDate);
-    console.log("FinalizedTime:", finalizedTime);
 
     await order.save();
 
@@ -383,15 +343,12 @@ exports.finalizeDeliveryDate = async (req, res) => {
       message: `Your delivery has been scheduled for ${finalizedDate} at ${finalizedTime}.`,
       type: "delivery_finalized",
       relatedOrder: order._id,
-    });
-
-    res.json({
+    }); res.json({
       success: true,
       data: order,
       message: "Delivery date finalized successfully",
     });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
@@ -471,7 +428,6 @@ exports.cancelOrder = async (req, res) => {
       message: "Order cancelled successfully",
     });
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });

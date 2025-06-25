@@ -118,18 +118,13 @@ const OrdersPage = () => {
         return `${day} ${getMonthName(month)} ${year}`;
       }
 
-      // For other date formats
-      const date = new Date(dateString);
+      // For other date formats      const date = new Date(dateString);
 
       if (isNaN(date.getTime())) {
-        console.error("Invalid date:", dateString);
         return "Invalid date";
-      }
-
-      const options = { year: "numeric", month: "short", day: "numeric" };
+      } const options = { year: "numeric", month: "short", day: "numeric" };
       return date.toLocaleDateString(undefined, options);
     } catch (error) {
-      console.error("Error formatting date:", error);
       return "Error formatting date";
     }
   };
