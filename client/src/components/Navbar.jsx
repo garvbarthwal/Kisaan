@@ -14,6 +14,7 @@ import {
   FaBell,
 } from "react-icons/fa";
 import NotificationBell from "./NotificationBell";
+import LanguageSelector from "./LanguageSelector";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -139,6 +140,9 @@ const Navbar = () => {
                 <NotificationBell />
               </>
             )}
+
+            {/* Language Selector */}
+            <LanguageSelector />
 
             {isAuthenticated ? (
               <div className="relative">
@@ -285,6 +289,11 @@ const Navbar = () => {
               >
                 About
               </Link>
+
+              {/* Language Selector for Mobile */}
+              <div className="py-2 border-t border-gray-200">
+                <LanguageSelector isMobile={true} onLanguageSelect={toggleMenu} />
+              </div>
 
               {isAuthenticated && user?.role === "consumer" && (
                 <button

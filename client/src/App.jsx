@@ -8,6 +8,7 @@ import AdminRoute from "./components/AdminRoute";
 import FarmerRoute from "./components/FarmerRoute";
 import ConsumerRoute from "./components/ConsumerRoute";
 import ScrollToTop from "./components/ScrollToTop";
+import LanguageSelectionPopup from "./components/LanguageSelectionPopup";
 
 // Public Pages
 import HomePage from "./pages/HomePage";
@@ -53,6 +54,7 @@ function App() {
   return (
     <>
       <ScrollToTop />
+      <LanguageSelectionPopup />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
