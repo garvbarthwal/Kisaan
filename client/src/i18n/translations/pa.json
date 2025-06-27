@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "ਕਿਸਾਨ",
+    "home": "ਮੁੱਖ ਪੰਨਾ",
+    "products": "ਉਤਪਾਦ",
+    "farmers": "ਕਿਸਾਨ",
+    "about": "ਬਾਰੇ",
+    "orders": "ਆਰਡਰ",
+    "cart": "ਕਾਰਟ",
+    "aiAssistant": "AI ਸਹਾਇਕ",
+    "farmerDashboard": "ਕਿਸਾਨ ਡੈਸ਼ਬੋਰਡ",
+    "adminDashboard": "ਐਡਮਿਨ ਡੈਸ਼ਬੋਰਡ",
+    "profile": "ਪ੍ਰੋਫਾਈਲ",
+    "messages": "ਸੁਨੇਹੇ",
+    "logout": "ਲਾਗ ਆਉਟ",
+    "login": "ਲਾਗਇਨ",
+    "register": "ਰਜਿਸਟਰ ਕਰੋ",
+    "cartEmpty": "ਤੁਹਾਡੀ ਕਾਰਟ ਖਾਲੀ ਹੈ"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "ଚାଷୀ",
+    "home": "ମୁଖ୍ୟ ପୃଷ୍ଠା",
+    "products": "ଉତ୍ପାଦ",
+    "farmers": "ଚାଷୀମାନେ",
+    "about": "ଆମ ବିଷୟରେ",
+    "orders": "ଅର୍ଡର",
+    "cart": "କାର୍ଟ",
+    "aiAssistant": "AI ସହାୟକ",
+    "farmerDashboard": "ଚାଷୀ ଡ୍ୟାଶବୋର୍ଡ",
+    "adminDashboard": "ଆଡମିନ୍ ଡ୍ୟାଶବୋର୍ଡ",
+    "profile": "ପ୍ରୋଫାଇଲ୍",
+    "messages": "ବାର୍ତ୍ତା",
+    "logout": "ଲଗ୍ ଆଉଟ୍",
+    "login": "ଲଗଇନ୍",
+    "register": "ପଞ୍ଜୀକରଣ କରନ୍ତୁ",
+    "cartEmpty": "ଆପଣଙ୍କ କାର୍ଟ ଖାଲି ଅଛି"
+  }
+}

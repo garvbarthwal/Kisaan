@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "शेतकरी",
+    "home": "मुख्यपृष्ठ",
+    "products": "उत्पादने",
+    "farmers": "शेतकरी",
+    "about": "माहिती",
+    "orders": "ऑर्डर",
+    "cart": "कार्ट",
+    "aiAssistant": "एआय सहाय्यक",
+    "farmerDashboard": "शेतकरी डॅशबोर्ड",
+    "adminDashboard": "प्रशासक डॅशबोर्ड",
+    "profile": "प्रोफाइल",
+    "messages": "संदेश",
+    "logout": "लॉग आउट",
+    "login": "लॉगिन",
+    "register": "नोंदणी करा",
+    "cartEmpty": "तुमची कार्ट रिकामी आहे"
+  }
+}

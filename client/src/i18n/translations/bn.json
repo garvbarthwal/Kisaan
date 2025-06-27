@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "কৃষক",
+    "home": "হোম",
+    "products": "পণ্য",
+    "farmers": "কৃষকেরা",
+    "about": "আমাদের সম্পর্কে",
+    "orders": "অর্ডার",
+    "cart": "কার্ট",
+    "aiAssistant": "এআই সহকারী",
+    "farmerDashboard": "কৃষক ড্যাশবোর্ড",
+    "adminDashboard": "অ্যাডমিন ড্যাশবোর্ড",
+    "profile": "প্রোফাইল",
+    "messages": "বার্তা",
+    "logout": "লগআউট",
+    "login": "লগইন",
+    "register": "রেজিস্টার করুন",
+    "cartEmpty": "আপনার কার্ট খালি"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "Kisaan",
+    "home": "Home",
+    "products": "Products",
+    "farmers": "Farmers",
+    "about": "About",
+    "orders": "Orders",
+    "cart": "Cart",
+    "aiAssistant": "AI Assistant",
+    "farmerDashboard": "Farmer Dashboard",
+    "adminDashboard": "Admin Dashboard",
+    "profile": "Profile",
+    "messages": "Messages",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "cartEmpty": "Your cart is empty"
+  }
+}

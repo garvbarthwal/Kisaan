@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "ರೈತ",
+    "home": "ಹೋಮ್",
+    "products": "ಉತ್ಪನ್ನಗಳು",
+    "farmers": "ರೈತರು",
+    "about": "ನಮ್ಮ ಬಗ್ಗೆ",
+    "orders": "ಆದೇಶಗಳು",
+    "cart": "ಕಾರ್ಟ್",
+    "aiAssistant": "AI ಸಹಾಯಕ",
+    "farmerDashboard": "ರೈತ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+    "adminDashboard": "ನಿರ್ವಾಹಕ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+    "profile": "ಪ್ರೊಫೈಲ್",
+    "messages": "ಸಂದೇಶಗಳು",
+    "logout": "ಲಾಗ್ ಔಟ್",
+    "login": "ಲಾಗ್ ಇನ್",
+    "register": "ನೋಂದಾಯಿಸಿ",
+    "cartEmpty": "ನಿಮ್ಮ ಕಾರ್ಟ್ ಖಾಲಿಯಾಗಿದೆ"
+  }
+}

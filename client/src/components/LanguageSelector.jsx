@@ -41,7 +41,7 @@ const LanguageSelector = ({ isMobile = false, onLanguageSelect }) => {
                     className="flex items-center space-x-2 w-full text-left text-gray-700 hover:text-green-500 transition-colors py-2"
                 >
                     <FaGlobe className="text-lg" />
-                    <span>{currentLang?.name || 'English'}</span>
+                    <span>{currentLang?.nativeName || 'English'}</span>
                     <FaChevronDown className={`text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -52,8 +52,8 @@ const LanguageSelector = ({ isMobile = false, onLanguageSelect }) => {
                                 key={language.code}
                                 onClick={() => handleLanguageSelect(language.code)}
                                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${currentLanguage === language.code
-                                        ? "bg-green-50 text-green-700 font-medium"
-                                        : "hover:bg-gray-50"
+                                    ? "bg-green-50 text-green-700 font-medium"
+                                    : "hover:bg-gray-50"
                                     }`}
                             >
                                 {language.nativeName}
@@ -72,7 +72,7 @@ const LanguageSelector = ({ isMobile = false, onLanguageSelect }) => {
                 className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors focus:outline-none px-3 py-2 rounded-lg hover:bg-green-50"
             >
                 <FaGlobe className="text-lg" />
-                <span className="hidden sm:inline font-medium">{currentLang?.name || 'English'}</span>
+                <span className="hidden sm:inline font-medium">{currentLang?.nativeName || 'English'}</span>
                 <FaChevronDown className={`text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -84,8 +84,8 @@ const LanguageSelector = ({ isMobile = false, onLanguageSelect }) => {
                                 key={language.code}
                                 onClick={() => handleLanguageSelect(language.code)}
                                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${currentLanguage === language.code
-                                        ? "bg-green-50 text-green-700 font-medium"
-                                        : "hover:bg-gray-50"
+                                    ? "bg-green-50 text-green-700 font-medium"
+                                    : "hover:bg-gray-50"
                                     }`}
                             >
                                 {language.nativeName}

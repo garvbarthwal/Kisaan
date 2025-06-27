@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "விவசாயி",
+    "home": "முகப்பு",
+    "products": "தயாரிப்புகள்",
+    "farmers": "விவசாயிகள்",
+    "about": "பற்றி",
+    "orders": "ஆர்டர்கள்",
+    "cart": "கார்ட்",
+    "aiAssistant": "AI உதவியாளர்",
+    "farmerDashboard": "விவசாயி டாஷ்போர்டு",
+    "adminDashboard": "நிர்வாகி டாஷ்போர்டு",
+    "profile": "சுயவிவரம்",
+    "messages": "செய்திகள்",
+    "logout": "வெளியேறு",
+    "login": "உள்நுழை",
+    "register": "பதிவு",
+    "cartEmpty": "உங்கள் கார்ட் காலியாக உள்ளது"
+  }
+}

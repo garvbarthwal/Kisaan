@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "کسان",
+    "home": "ہوم",
+    "products": "مصنوعات",
+    "farmers": "کسان",
+    "about": "ہمارے بارے میں",
+    "orders": "آرڈرز",
+    "cart": "کارٹ",
+    "aiAssistant": "اے آئی اسسٹنٹ",
+    "farmerDashboard": "کسان ڈیش بورڈ",
+    "adminDashboard": "ایڈمن ڈیش بورڈ",
+    "profile": "پروفائل",
+    "messages": "پیغامات",
+    "logout": "لاگ آؤٹ",
+    "login": "لاگ ان",
+    "register": "رجسٹر کریں",
+    "cartEmpty": "آپ کی کارٹ خالی ہے"
+  }
+}

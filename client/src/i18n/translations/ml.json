@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "കർഷകൻ",
+    "home": "ഹോം",
+    "products": "ഉൽപ്പന്നങ്ങൾ",
+    "farmers": "കർഷകർ",
+    "about": "കുറിച്ച്",
+    "orders": "ഓർഡറുകൾ",
+    "cart": "കാർട്ട്",
+    "aiAssistant": "AI അസിസ്റ്റന്റ്",
+    "farmerDashboard": "കർഷക ഡാഷ്‌ബോർഡ്",
+    "adminDashboard": "അഡ്മിൻ ഡാഷ്‌ബോർഡ്",
+    "profile": "പ്രൊഫൈൽ",
+    "messages": "സന്ദേശങ്ങൾ",
+    "logout": "ലോഗ് ഔട്ട്",
+    "login": "ലോഗിൻ",
+    "register": "രജിസ്റ്റർ ചെയ്യുക",
+    "cartEmpty": "നിങ്ങളുടെ കാർട്ട് ശൂന്യമാണ്"
+  }
+}

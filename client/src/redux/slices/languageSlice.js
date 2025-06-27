@@ -45,6 +45,13 @@ const languageSlice = createSlice({
             localStorage.setItem('kisaan_language_selected', 'true');
             state.isLanguageSelected = true;
             state.showLanguagePopup = false;
+
+            // Sync with i18n
+            if (typeof window !== 'undefined') {
+                import('../../i18n').then(({ syncLanguageWithRedux }) => {
+                    syncLanguageWithRedux(action.payload);
+                });
+            }
         },
         closeLanguagePopup: (state) => {
             state.showLanguagePopup = false;
@@ -54,6 +61,13 @@ const languageSlice = createSlice({
                 localStorage.setItem('kisaan_language', 'en');
                 localStorage.setItem('kisaan_language_selected', 'true');
                 state.isLanguageSelected = true;
+
+                // Sync with i18n
+                if (typeof window !== 'undefined') {
+                    import('../../i18n').then(({ syncLanguageWithRedux }) => {
+                        syncLanguageWithRedux('en');
+                    });
+                }
             }
         },
         showLanguagePopup: (state) => {

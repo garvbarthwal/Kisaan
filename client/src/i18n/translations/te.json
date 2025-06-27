@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "రైతు",
+    "home": "హోమ్",
+    "products": "ఉత్పత్తులు",
+    "farmers": "రైతులు",
+    "about": "గురించి",
+    "orders": "ఆర్డర్‌లు",
+    "cart": "కార్ట్",
+    "aiAssistant": "AI అసిస్టెంట్",
+    "farmerDashboard": "రైతు డాష్‌బోర్డ్",
+    "adminDashboard": "అడ్మిన్ డాష్‌బోర్డ్",
+    "profile": "ప్రొఫైల్",
+    "messages": "సందేశాలు",
+    "logout": "లాగ్ అవుట్",
+    "login": "లాగిన్",
+    "register": "నమోదు",
+    "cartEmpty": "మీ కార్ట్ ఖాళీగా ఉంది"
+  }
+}

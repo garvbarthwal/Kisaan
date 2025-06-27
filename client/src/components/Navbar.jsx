@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { logout } from "../redux/slices/authSlice";
 import { resetOrderState, getFarmerOrders } from "../redux/slices/orderSlice";
 import { toast } from "react-toastify";
@@ -19,6 +20,7 @@ import LanguageSelector from "./LanguageSelector";
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { t } = useTranslation();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -64,7 +66,7 @@ const Navbar = () => {
       dispatch(resetOrderState());
       navigate("/checkout");
     } else {
-      toast.info("Your cart is empty");
+      toast.info(t('navbar.cartEmpty'));
     }
   };
 
@@ -74,33 +76,33 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-2">
             <FaLeaf className="text-green-500 text-2xl" />
-            <span className="text-xl font-bold text-green-600">Kisaan</span>
+            <span className="text-xl font-bold text-green-600">{t('navbar.kisaan')}</span>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden lg:flex items-center space-x-6">
             <Link
               to="/"
               className="text-gray-700 hover:text-green-500 transition-colors"
             >
-              Home
+              {t('navbar.home')}
             </Link>
             <Link
               to="/products"
               className="text-gray-700 hover:text-green-500 transition-colors"
             >
-              Products
+              {t('navbar.products')}
             </Link>
             <Link
               to="/farmers"
               className="text-gray-700 hover:text-green-500 transition-colors"
             >
-              Farmers
+              {t('navbar.farmers')}
             </Link>
             <Link
               to="/about"
               className="text-gray-700 hover:text-green-500 transition-colors"
             >
-              About
+              {t('navbar.about')}
             </Link>
 
             {isAuthenticated && user?.role === "consumer" && (
@@ -109,7 +111,7 @@ const Navbar = () => {
                   to="/orders"
                   className="text-gray-700 hover:text-green-500 transition-colors"
                 >
-                  Orders
+                  {t('navbar.orders')}
                 </Link>
                 <button
                   onClick={handleCartClick}
@@ -130,7 +132,7 @@ const Navbar = () => {
             {isAuthenticated && user?.role === "farmer" && (
               <>
                 <Link to="/farmer/orders" className="relative flex items-center">
-                  <span className="text-gray-700 hover:text-green-500 transition-colors font-medium">Orders</span>
+                  <span className="text-gray-700 hover:text-green-500 transition-colors font-medium">{t('navbar.orders')}</span>
                   {pendingOrdersCount > 0 && (
                     <span className="ml-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {pendingOrdersCount}
@@ -164,7 +166,7 @@ const Navbar = () => {
                         className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
                         onClick={() => setIsProfileOpen(false)}
                       >
-                        Admin Dashboard
+                        {t('navbar.adminDashboard')}
                       </Link>
                     )}
 
@@ -175,14 +177,14 @@ const Navbar = () => {
                           className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
                           onClick={() => setIsProfileOpen(false)}
                         >
-                          Farmer Dashboard
+                          {t('navbar.farmerDashboard')}
                         </Link>
                         <Link
                           to="/farmer/ai-assistant"
                           className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
                           onClick={() => setIsProfileOpen(false)}
                         >
-                          AI Assistant
+                          {t('navbar.aiAssistant')}
                         </Link>
                       </>
                     )}
@@ -194,7 +196,7 @@ const Navbar = () => {
                           className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
                           onClick={() => setIsProfileOpen(false)}
                         >
-                          Profile
+                          {t('navbar.profile')}
                         </Link>
 
                         {/* Orders link removed from dropdown as it's now in the navbar */}
@@ -206,7 +208,7 @@ const Navbar = () => {
                       className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-500"
                       onClick={() => setIsProfileOpen(false)}
                     >
-                      Messages
+                      {t('navbar.messages')}
                     </Link>
 
                     <button
@@ -218,7 +220,7 @@ const Navbar = () => {
                     >
                       <div className="flex items-center space-x-2">
                         <FaSignOutAlt />
-                        <span>Logout</span>
+                        <span>{t('navbar.logout')}</span>
                       </div>
                     </button>
                   </div>
@@ -230,20 +232,20 @@ const Navbar = () => {
                   to="/login"
                   className="text-gray-700 hover:text-green-500 transition-colors"
                 >
-                  Login
+                  {t('navbar.login')}
                 </Link>
                 <Link
                   to="/register"
                   className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  Register
+                  {t('navbar.register')}
                 </Link>
               </div>
             )}
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <button
               onClick={toggleMenu}
               className="text-gray-700 hover:text-green-500 focus:outline-none"
@@ -259,35 +261,35 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4">
+          <div className="lg:hidden mt-4 pb-4">
             <div className="flex flex-col space-y-4">
               <Link
                 to="/"
                 className="text-gray-700 hover:text-green-500 transition-colors"
                 onClick={toggleMenu}
               >
-                Home
+                {t('navbar.home')}
               </Link>
               <Link
                 to="/products"
                 className="text-gray-700 hover:text-green-500 transition-colors"
                 onClick={toggleMenu}
               >
-                Products
+                {t('navbar.products')}
               </Link>
               <Link
                 to="/farmers"
                 className="text-gray-700 hover:text-green-500 transition-colors"
                 onClick={toggleMenu}
               >
-                Farmers
+                {t('navbar.farmers')}
               </Link>
               <Link
                 to="/about"
                 className="text-gray-700 hover:text-green-500 transition-colors"
                 onClick={toggleMenu}
               >
-                About
+                {t('navbar.about')}
               </Link>
 
               {/* Language Selector for Mobile */}
@@ -302,14 +304,14 @@ const Navbar = () => {
                       dispatch(resetOrderState());
                       navigate("/checkout");
                     } else {
-                      toast.info("Your cart is empty");
+                      toast.info(t('navbar.cartEmpty'));
                     }
                     toggleMenu();
                   }}
                   className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors text-left"
                 >
                   <FaShoppingCart />
-                  <span>Cart ({cartItems.length})</span>
+                  <span>{t('navbar.cart')} ({cartItems.length})</span>
                 </button>
               )}
 
@@ -319,7 +321,7 @@ const Navbar = () => {
                   className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors"
                   onClick={toggleMenu}
                 >
-                  <span>Orders</span>
+                  <span>{t('navbar.orders')}</span>
                   {pendingOrdersCount > 0 && (
                     <span className="bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {pendingOrdersCount}
@@ -336,7 +338,7 @@ const Navbar = () => {
                       className="text-gray-700 hover:text-green-500 transition-colors"
                       onClick={toggleMenu}
                     >
-                      Admin Dashboard
+                      {t('navbar.adminDashboard')}
                     </Link>
                   )}
 
@@ -347,14 +349,14 @@ const Navbar = () => {
                         className="text-gray-700 hover:text-green-500 transition-colors"
                         onClick={toggleMenu}
                       >
-                        Farmer Dashboard
+                        {t('navbar.farmerDashboard')}
                       </Link>
                       <Link
                         to="/farmer/ai-assistant"
                         className="text-gray-700 hover:text-green-500 transition-colors"
                         onClick={toggleMenu}
                       >
-                        AI Assistant
+                        {t('navbar.aiAssistant')}
                       </Link>
                     </>
                   )}
@@ -364,7 +366,7 @@ const Navbar = () => {
                     className="text-gray-700 hover:text-green-500 transition-colors"
                     onClick={toggleMenu}
                   >
-                    Profile
+                    {t('navbar.profile')}
                   </Link>
 
                   {user?.role === "consumer" && (
@@ -373,7 +375,7 @@ const Navbar = () => {
                       className="text-gray-700 hover:text-green-500 transition-colors"
                       onClick={toggleMenu}
                     >
-                      Orders
+                      {t('navbar.orders')}
                     </Link>
                   )}
 
@@ -382,7 +384,7 @@ const Navbar = () => {
                     className="text-gray-700 hover:text-green-500 transition-colors"
                     onClick={toggleMenu}
                   >
-                    Messages
+                    {t('navbar.messages')}
                   </Link>
 
                   <button
@@ -393,7 +395,7 @@ const Navbar = () => {
                     className="flex items-center space-x-2 text-gray-700 hover:text-green-500 transition-colors text-left"
                   >
                     <FaSignOutAlt />
-                    <span>Logout</span>
+                    <span>{t('navbar.logout')}</span>
                   </button>
                 </>
               ) : (
@@ -403,14 +405,14 @@ const Navbar = () => {
                     className="text-gray-700 hover:text-green-500 transition-colors"
                     onClick={toggleMenu}
                   >
-                    Login
+                    {t('navbar.login')}
                   </Link>
                   <Link
                     to="/register"
                     className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors text-center"
                     onClick={toggleMenu}
                   >
-                    Register
+                    {t('navbar.register')}
                   </Link>
                 </div>
               )}

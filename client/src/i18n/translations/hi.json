@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "किसान",
+    "home": "मुख्य पृष्ठ",
+    "products": "उत्पाद",
+    "farmers": "किसान",
+    "about": "हमारे बारे में",
+    "orders": "ऑर्डर",
+    "cart": "कार्ट",
+    "aiAssistant": "एआई सहायक",
+    "farmerDashboard": "किसान डैशबोर्ड",
+    "adminDashboard": "व्यवस्थापक डैशबोर्ड",
+    "profile": "प्रोफ़ाइल",
+    "messages": "संदेश",
+    "logout": "लॉग आउट",
+    "login": "लॉगिन",
+    "register": "पंजीकरण करें",
+    "cartEmpty": "आपकी कार्ट खाली है"
+  }
+}

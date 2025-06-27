@@ -1,0 +1,20 @@
+{
+  "navbar": {
+    "kisaan": "ખેડૂત",
+    "home": "હોમ",
+    "products": "ઉત્પાદનો",
+    "farmers": "ખેડૂતો",
+    "about": "અમારા વિશે",
+    "orders": "ઓર્ડર",
+    "cart": "કાર્ટ",
+    "aiAssistant": "AI સહાયક",
+    "farmerDashboard": "ખેડૂત ડેશબોર્ડ",
+    "adminDashboard": "એડમિન ડેશબોર્ડ",
+    "profile": "પ્રોફાઇલ",
+    "messages": "સંદેશા",
+    "logout": "લૉગઆઉટ",
+    "login": "લૉગિન",
+    "register": "નોંધણી કરો",
+    "cartEmpty": "તમારી કાર્ટ ખાલી છે"
+  }
+}
