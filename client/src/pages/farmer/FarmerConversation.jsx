@@ -67,7 +67,8 @@ const ConversationPage = () => {
     recognition.interimResults = false;
 
     recognition.onstart = () => setIsListening(true); recognition.onend = () => setIsListening(false);
-    recognition.onerror = (e) => {
+    recognition.onerror = (error) => {
+      console.error('Speech recognition error:', error);
       setIsListening(false);
     };
     recognition.onresult = (event) => {
@@ -125,6 +126,7 @@ const ConversationPage = () => {
         },
       }));
     } catch (error) {
+      console.error('Translation error:', error);
       setTranslations((prev) => ({
         ...prev,
         [messageId]: {

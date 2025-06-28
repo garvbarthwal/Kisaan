@@ -26,7 +26,6 @@ const AiAssistantPage = () => {
     const dispatch = useDispatch();
     const {
         conversations,
-        currentConversation,
         supportedLanguages,
         sampleQueries: apiSampleQueries,
         queryLoading,
@@ -44,7 +43,7 @@ const AiAssistantPage = () => {
     const chatContainerRef = useRef(null);
 
     // Sample queries for suggestions - will be fetched from API
-    const [sampleQueries, setSampleQueries] = useState([
+    const sampleQueries = [
         {
             en: "What is the best time to plant rice in monsoon season?",
             hi: "मानسून में धान बोने का सबसे अच्छा समय कौन सा है?",
@@ -144,7 +143,7 @@ const AiAssistantPage = () => {
             category_as: "জল ব্যৱস্থাপনা",
             category_ur: "آبی انتظام"
         }
-    ]);
+    ];
 
     useEffect(() => {
         dispatch(getSupportedLanguages());

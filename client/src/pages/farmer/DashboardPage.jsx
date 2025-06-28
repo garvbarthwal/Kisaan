@@ -20,23 +20,6 @@ import {
 } from "react-icons/fa";
 import { updateOrderStatus } from "../../redux/slices/orderSlice";
 
-// Utility function to check if farmer profile is complete
-const isFarmerProfileComplete = (profile) => {
-  if (!profile) return false;
-
-  // Check if farmer has set order options (pickup or delivery)
-  const hasOrderOptions = profile.acceptsPickup || profile.acceptsDelivery;
-
-  // Check if farmer has business hours set
-  const hasBusinessHours =
-    profile.businessHours &&
-    Object.values(profile.businessHours).some(
-      (day) => day && day.open && day.close && day.open.trim() !== "" && day.close.trim() !== ""
-    );
-
-  return hasOrderOptions && hasBusinessHours;
-};
-
 const DashboardPage = () => {
   const dispatch = useDispatch();
   const { farmerProducts, loading: productsLoading } = useSelector(
@@ -48,7 +31,7 @@ const DashboardPage = () => {
     (state) => state.messages
   );
   const { user } = useSelector((state) => state.auth);
-  const { myFarmerProfile, loading: profileLoading } = useSelector((state) => state.farmers);
+  const { loading: profileLoading } = useSelector((state) => state.farmers);
 
   useEffect(() => {
     dispatch(getFarmerProducts());

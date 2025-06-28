@@ -102,6 +102,7 @@ const OrderDetailPage = () => {
       const options = { year: "numeric", month: "long", day: "numeric" };
       return date.toLocaleDateString(undefined, options);
     } catch (error) {
+      console.error('Error formatting date:', error);
       return "Error formatting date";
     }
   };

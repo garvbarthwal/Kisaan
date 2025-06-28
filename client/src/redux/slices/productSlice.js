@@ -144,7 +144,7 @@ const productSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Get all products
-      .addCase(getProducts.pending, (state, action) => {
+      .addCase(getProducts.pending, (state) => {
         // Only set loading to true on initial load, not on filter changes
         if (!state.products.length) {
           state.loading = true;

@@ -65,7 +65,7 @@ i18n
         fallbackLng: 'en',
 
         // Disable debug in production
-        debug: process.env.NODE_ENV === 'development',
+        debug: import.meta.env?.DEV || false,
 
         // Interpolation options
         interpolation: {

@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   removeFromCart,
   updateCartQuantity,
-  clearCart,
 } from "../redux/slices/cartSlice";
 import { createOrder, resetOrderState } from "../redux/slices/orderSlice";
 import { FaArrowLeft, FaLeaf, FaTrash } from "react-icons/fa";

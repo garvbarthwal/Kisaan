@@ -89,7 +89,7 @@ export const uploadProductImages = async (files, options = {}) => {
         const formData = new FormData();
 
         // Append each file to the form data
-        fileArray.forEach((file, index) => {
+        fileArray.forEach((file) => {
             formData.append('images', file, file.name);
         });
 
@@ -152,55 +152,51 @@ export const uploadProfileImage = async (file, options = {}) => {
         onUploadComplete
     } = options;
 
-    try {
-        // Call upload start callback
-        if (onUploadStart) {
-            onUploadStart();
+    // Call upload start callback
+    if (onUploadStart) {
+        onUploadStart();
+    }
+
+    // Validate image if needed
+    if (validate) {
+        const validation = validateImages([file], {
+            maxSize: 2 * 1024 * 1024, // 2MB for profile images
+            maxCount: 1
+        });
+
+        if (!validation.valid) {
+            throw new Error(validation.errors.join(', '));
         }
+    }
 
-        // Validate image if needed
-        if (validate) {
-            const validation = validateImages([file], {
-                maxSize: 2 * 1024 * 1024, // 2MB for profile images
-                maxCount: 1
-            });
+    const formData = new FormData();
+    formData.append('image', file);
 
-            if (!validation.valid) {
-                throw new Error(validation.errors.join(', '));
+    const config = {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+            if (onProgress) {
+                const percentCompleted = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                );
+                onProgress(percentCompleted, progressEvent);
             }
         }
+    };
 
-        const formData = new FormData();
-        formData.append('image', file);
+    const res = await axios.post('/api/upload/profile-image', formData, config);
 
-        const config = {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-            onUploadProgress: (progressEvent) => {
-                if (onProgress) {
-                    const percentCompleted = Math.round(
-                        (progressEvent.loaded * 100) / progressEvent.total
-                    );
-                    onProgress(percentCompleted, progressEvent);
-                }
-            }
-        };
+    // Call upload complete callback
+    if (onUploadComplete) {
+        onUploadComplete();
+    }
 
-        const res = await axios.post('/api/upload/profile-image', formData, config);
-
-        // Call upload complete callback
-        if (onUploadComplete) {
-            onUploadComplete();
-        }
-
-        if (res.data.success) {
-            return res.data.imageUrl;
-        } else {
-            throw new Error(res.data.message || 'Failed to upload profile image');
-        }
-    } catch (error) {
-        throw error;
+    if (res.data.success) {
+        return res.data.imageUrl;
+    } else {
+        throw new Error(res.data.message || 'Failed to upload profile image');
     }
 };
 
@@ -253,7 +249,7 @@ export const uploadFarmImages = async (files, options = {}) => {
         const formData = new FormData();
 
         // Append each file to the form data
-        fileArray.forEach((file, index) => {
+        fileArray.forEach((file) => {
             formData.append('images', file, file.name);
         });
 

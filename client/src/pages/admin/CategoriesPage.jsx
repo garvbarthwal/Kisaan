@@ -39,7 +39,7 @@ const CategoriesPage = () => {
         icon: "",
       });
     }
-  }, [success]);
+  }, [success, showModal, setShowModal]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -1,6 +1,4 @@
 {
-  "dependencies": {
-    "cloudinary": "^2.7.0",
-    "react-speech-kit": "^3.0.1"
-  }
+  "scripts": {},
+  "devDependencies": {}
 }

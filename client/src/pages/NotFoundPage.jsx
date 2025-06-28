@@ -21,11 +21,4 @@ const NotFoundPage = () => {
   );
 };
 
-// Define translation keys for NotFoundPage
-const notFoundPageTranslations = [
-  "404 - Page Not Found",
-  "Oops! The page you're looking for seems to have been harvested already.",
-  "Back to Home"
-];
-
 export default NotFoundPage;

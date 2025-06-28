@@ -40,20 +40,20 @@ const OrdersPage = () => {
     filter === "all"
       ? orders
       : filter === "pending"
-      ? orders.filter(
+        ? orders.filter(
           (order) =>
             order?.status === "pending" ||
             (order?.status === "accepted" &&
               order?.deliveryDetails &&
               !order?.deliveryDetails?.isDateFinalized)
         )
-      : filter === "accepted"
-      ? orders.filter(
-          (order) =>
-            order?.status === "accepted" &&
-            (!order?.deliveryDetails || order?.deliveryDetails?.isDateFinalized)
-        )
-      : orders.filter((order) => order?.status === filter);
+        : filter === "accepted"
+          ? orders.filter(
+            (order) =>
+              order?.status === "accepted" &&
+              (!order?.deliveryDetails || order?.deliveryDetails?.isDateFinalized)
+          )
+          : orders.filter((order) => order?.status === filter);
 
   const handleQuickAction = (order, status) => {
     if (isValidObjectId(order._id)) {
@@ -102,7 +102,8 @@ const OrdersPage = () => {
         month: "short",
         day: "numeric",
       });
-    } catch (e) {
+    } catch (error) {
+      console.error('Error formatting date:', error);
       return "Error formatting date";
     }
   };
@@ -127,13 +128,12 @@ const OrdersPage = () => {
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-              filter === status
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${filter === status
                 ? status === "rejected" || status === "cancelled"
                   ? "bg-red-500 text-white"
                   : "bg-green-500 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+              }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </button>

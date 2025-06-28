@@ -136,7 +136,7 @@ const aiSlice = createSlice({
                 state.loading = true
                 state.error = null
             })
-            .addCase(getQueryHistory.fulfilled, (state, action) => {
+            .addCase(getQueryHistory.fulfilled, (state) => {
                 state.loading = false
                 // Handle history data if implemented on backend
             })

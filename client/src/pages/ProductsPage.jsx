@@ -23,7 +23,6 @@ const ProductsPage = () => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Get categories and perform initial data fetch once
@@ -36,11 +35,10 @@ const ProductsPage = () => {
       // Then get initial products without filters
       dispatch(getProducts({}))
         .then(() => {
-          setDataLoaded(true);
           setIsInitialLoad(false);
         })
         .catch((error) => {
-          setDataLoaded(true);
+          console.error('Error fetching products:', error);
           setIsInitialLoad(false);
         });
     }

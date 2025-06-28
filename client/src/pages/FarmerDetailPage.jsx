@@ -34,7 +34,7 @@ const FarmerDetailPage = () => {
   const { products, loading: productsLoading } = useSelector(
     (state) => state.products
   );
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   useEffect(() => {
     // Always fetch fresh data when the ID changes
     dispatch(getFarmerProfile(id));

@@ -43,7 +43,7 @@ export const getMyFarmerProfile = createAsyncThunk(
 // Update farmer profile
 export const updateFarmerProfile = createAsyncThunk(
   "farmers/updateFarmerProfile",
-  async (profileData, { rejectWithValue, getState }) => {
+  async (profileData, { rejectWithValue }) => {
     try {
       // Token is automatically added by the axiosInstance interceptor
       const { data } = await axiosInstance.put(`/api/users/farmers/profile`, profileData)

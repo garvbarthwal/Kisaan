@@ -80,6 +80,10 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden lg:flex items-center space-x-6">
+
+            {/* Language Selector */}
+            <LanguageSelector />
+
             <Link
               to="/"
               className="text-gray-700 hover:text-green-500 transition-colors"
@@ -142,9 +146,6 @@ const Navbar = () => {
                 <NotificationBell />
               </>
             )}
-
-            {/* Language Selector */}
-            <LanguageSelector />
 
             {isAuthenticated ? (
               <div className="relative">
@@ -263,6 +264,10 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="lg:hidden mt-4 pb-4">
             <div className="flex flex-col space-y-4">
+              {/* Language Selector for Mobile - moved to first position */}
+              <div className="py-2 border-t border-b border-gray-200">
+                <LanguageSelector isMobile={true} onLanguageSelect={toggleMenu} />
+              </div>
               <Link
                 to="/"
                 className="text-gray-700 hover:text-green-500 transition-colors"
@@ -291,11 +296,6 @@ const Navbar = () => {
               >
                 {t('navbar.about')}
               </Link>
-
-              {/* Language Selector for Mobile */}
-              <div className="py-2 border-t border-gray-200">
-                <LanguageSelector isMobile={true} onLanguageSelect={toggleMenu} />
-              </div>
 
               {isAuthenticated && user?.role === "consumer" && (
                 <button

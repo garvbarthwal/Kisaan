@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   FaLeaf,
   FaUsers,
@@ -33,6 +34,7 @@ const teamMembers = [
 ];
 
 const AboutPage = () => {
+  const { t } = useTranslation();
 
   return (
     <div>
@@ -49,13 +51,13 @@ const AboutPage = () => {
         <div className="relative z-10 w-full">
           <div className="max-w-4xl mx-auto text-center px-4">
             <div className="inline-block bg-green-100 text-green-800 text-xs font-semibold rounded-full px-3 py-1 mb-6 shadow-sm border border-green-200">
-              <span className="uppercase tracking-wider">Our Story</span>
+              <span className="uppercase tracking-wider">{t('aboutPage.ourStory')}</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold mb-6 text-gray-900">
-              About Kisaan
+              {t('aboutPage.aboutKisaan')}
             </h1>
             <p className="text-lg md:text-xl text-gray-600 mb-10">
-              Connecting local farmers with consumers to promote sustainable agriculture and strengthen community bonds.
+              {t('aboutPage.heroDescription')}
             </p>
           </div>
         </div>
@@ -68,13 +70,13 @@ const AboutPage = () => {
               <div className="flex flex-col md:flex-row items-center gap-12">
                 <div className="md:w-1/2 text-center md:text-left">
                   <h2 className="text-4xl font-extrabold text-green-700 mb-6 leading-tight">
-                    Our Mission
+                    {t('aboutPage.ourMission')}
                   </h2>
                   <p className="text-gray-800 text-lg mb-4">
-                    Kisaan was founded with a simple yet powerful mission: to create a direct link between local farmers and consumers. We believe everyone deserves access to fresh, locally grown produce and farmers deserve fair compensation.
+                    {t('aboutPage.missionDescription1')}
                   </p>
                   <p className="text-gray-800 text-lg">
-                    By eliminating middlemen and creating a transparent marketplace, we're building a sustainable food system that benefits both producers and consumers while reducing environmental impact.
+                    {t('aboutPage.missionDescription2')}
                   </p>
                 </div>
 
@@ -91,7 +93,7 @@ const AboutPage = () => {
         <section className="py-24 bg-gradient-to-b from-white to-gray-50">
           <div className="container mx-auto px-4">
             <h2 className="text-4xl font-extrabold text-center text-green-700 mb-16">
-              What Makes Us Different
+              {t('aboutPage.whatMakesUsDifferent')}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
@@ -101,9 +103,9 @@ const AboutPage = () => {
                     <FaHandshake className="text-2xl text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-3">Direct Relationships</h3>
+                    <h3 className="text-xl font-bold mb-3">{t('aboutPage.directRelationships')}</h3>
                     <p className="text-gray-700">
-                      We foster direct relationships between farmers and consumers, eliminating middlemen and allowing farmers to earn fair prices for their produce while consumers get fresher food.
+                      {t('aboutPage.directRelationshipsDesc')}
                     </p>
                   </div>
                 </div>
@@ -115,9 +117,9 @@ const AboutPage = () => {
                     <FaLeaf className="text-2xl text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-3">Sustainability Focus</h3>
+                    <h3 className="text-xl font-bold mb-3">{t('aboutPage.sustainabilityFocus')}</h3>
                     <p className="text-gray-700">
-                      We prioritize sustainable farming practices, reducing food miles, and minimizing packaging waste. Our platform encourages environmentally responsible choices.
+                      {t('aboutPage.sustainabilityFocusDesc')}
                     </p>
                   </div>
                 </div>
@@ -129,9 +131,9 @@ const AboutPage = () => {
                     <FaUsers className="text-2xl text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-3">Community Building</h3>
+                    <h3 className="text-xl font-bold mb-3">{t('aboutPage.communityBuilding')}</h3>
                     <p className="text-gray-700">
-                      Beyond transactions, we're building a community where farmers and consumers can connect, share knowledge, and support local food systems together.
+                      {t('aboutPage.communityBuildingDesc')}
                     </p>
                   </div>
                 </div>
@@ -143,9 +145,9 @@ const AboutPage = () => {
                     <FaShoppingBasket className="text-2xl text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-3">Diverse Selection</h3>
+                    <h3 className="text-xl font-bold mb-3">{t('aboutPage.diverseSelection')}</h3>
                     <p className="text-gray-700">
-                      From seasonal vegetables to artisanal products, we offer a diverse range of locally produced goods that support small-scale farmers and traditional farming practices.
+                      {t('aboutPage.diverseSelectionDesc')}
                     </p>
                   </div>
                 </div>
@@ -157,7 +159,7 @@ const AboutPage = () => {
         <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
           <div className="container mx-auto px-4">
             <h2 className="text-4xl font-extrabold text-center text-green-700 mb-16">
-              Meet Our Team
+              {t('aboutPage.meetOurTeam')}
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -166,14 +168,13 @@ const AboutPage = () => {
                   key={member.id}
                   className="bg-white rounded-2xl shadow-lg p-6 text-center hover:shadow-xl transition-all duration-300"
                 >
-                  <h3 className="font-bold">{member.name}</h3>
-                  <a
+                  <h3 className="font-bold">{member.name}</h3>                    <a
                     href={member.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 text-sm hover:underline"
                   >
-                    LinkedIn
+                    {t('aboutPage.linkedin')}
                   </a>
                 </div>
               ))}
@@ -185,23 +186,23 @@ const AboutPage = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-4xl font-extrabold text-green-700 mb-6">
-                Join the Kisaan Movement
+                {t('aboutPage.joinMovement')}
               </h2>
               <p className="text-xl text-gray-700 mb-12">
-                Whether you're a farmer looking to reach new customers or a consumer seeking fresh local produce, Kisaan is your platform for connection and community.
+                {t('aboutPage.movementDescription')}
               </p>
               <div className="flex flex-col md:flex-row gap-4 justify-center">
                 <Link
                   to="/register"
                   className="btn btn-primary px-8 py-3 text-lg rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  Join as Farmer
+                  {t('aboutPage.joinAsFarmer')}
                 </Link>
                 <Link
                   to="/register"
                   className="btn bg-white text-green-700 hover:bg-green-50 px-8 py-3 text-lg rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  Register as Consumer
+                  {t('aboutPage.registerAsConsumer')}
                 </Link>
               </div>
             </div>
