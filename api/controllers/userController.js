@@ -108,6 +108,7 @@ exports.updateFarmerProfile = async (req, res) => {
       acceptsPickup,
       acceptsDelivery,
       deliveryRadius,
+      farmLocation,
     } = req.body;
 
     const profileFields = {
@@ -122,6 +123,7 @@ exports.updateFarmerProfile = async (req, res) => {
       acceptsPickup,
       acceptsDelivery,
       deliveryRadius,
+      farmLocation,
     };
 
     let farmerProfile = await FarmerProfile.findOne({ user: req.user._id });

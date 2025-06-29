@@ -8,6 +8,7 @@ import {
 import { createOrder, resetOrderState } from "../redux/slices/orderSlice";
 import { FaArrowLeft, FaLeaf, FaTrash } from "react-icons/fa";
 import Loader from "../components/Loader";
+import LocationDetector from "../components/LocationDetector";
 import { placeholder } from "../assets";
 
 const CheckoutPage = () => {
@@ -24,6 +25,8 @@ const CheckoutPage = () => {
         city: "",
         state: "",
         zipCode: "",
+        coordinates: null,
+        locationDetected: false,
       },
       date: "",
       time: "",
@@ -63,6 +66,8 @@ const CheckoutPage = () => {
             city: user.address.city || "",
             state: user.address.state || "",
             zipCode: user.address.zipCode || "",
+            coordinates: user.address.coordinates || null,
+            locationDetected: user.address.locationDetected || false,
           },
         },
       }));
@@ -189,6 +194,24 @@ const CheckoutPage = () => {
       (total, item) => total + item.price * item.quantity,
       0
     );
+  };
+
+  // Handle location detection for delivery address
+  const handleLocationDetected = (locationData) => {
+    setOrderDetails(prev => ({
+      ...prev,
+      deliveryDetails: {
+        ...prev.deliveryDetails,
+        address: {
+          street: locationData.street || prev.deliveryDetails.address.street,
+          city: locationData.city,
+          state: locationData.state,
+          zipCode: locationData.zipCode,
+          coordinates: locationData.coordinates,
+          locationDetected: locationData.locationDetected,
+        }
+      }
+    }));
   };
 
   if (cartItems.length === 0) {
@@ -430,6 +453,51 @@ const CheckoutPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <h3 className="text-lg font-medium text-gray-700">
+                      Delivery Address
+                    </h3>
+                    <div className="flex-shrink-0">
+                      <LocationDetector
+                        onLocationDetected={handleLocationDetected}
+                        isLoading={loading}
+                        variant="compact"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Location accuracy notice */}
+                  {!orderDetails.deliveryDetails.address.coordinates && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                      <div className="flex items-start gap-2">
+                        <div className="w-4 h-4 text-amber-600 mt-0.5">📍</div>
+                        <div>
+                          <p className="text-sm text-amber-800 font-medium">
+                            Improve Delivery Accuracy
+                          </p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            Use "Detect Location" for precise GPS coordinates to ensure accurate delivery to your exact location.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {orderDetails.deliveryDetails.address.coordinates && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <p className="text-sm text-green-700 font-medium">
+                          ✓ Exact delivery location detected
+                        </p>
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">
+                        Your precise coordinates have been saved for accurate delivery.
+                        The exact coordinates are securely stored and not visible to others.
+                      </p>
+                    </div>
+                  )}
+
                   <div>
                     <label
                       className="block text-gray-700 font-medium mb-2"
@@ -602,6 +670,12 @@ const CheckoutPage = () => {
           </div>
         </div>
       </div>
+
+      {orderType === "delivery" && (
+        <div className="mt-8">
+          <LocationDetector onLocationDetected={handleLocationDetected} />
+        </div>
+      )}
     </div>
   );
 };

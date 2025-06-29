@@ -59,10 +59,12 @@ const RegisterPage = () => {
       ...formData,
       address: {
         ...formData.address,
+        street: locationData.street || formData.address.street,
         city: locationData.city,
         state: locationData.state,
         zipCode: locationData.zipCode,
         coordinates: locationData.coordinates,
+        locationDetected: locationData.locationDetected,
       },
     });
   };
@@ -343,9 +345,26 @@ const RegisterPage = () => {
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Address & Location
               </label>
+
+              {/* Location Detection Notice */}
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 text-amber-600 mt-0.5">📍</div>
+                  <div>
+                    <p className="text-sm text-amber-800 font-medium mb-1">
+                      Accurate Location Required
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      For precise delivery services, we need your exact location.
+                      Please use the "Detect Location" button to automatically fill your address with GPS coordinates.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 gap-3">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -362,15 +381,33 @@ const RegisterPage = () => {
                   />
                 </div>
 
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                   <h3 className="text-sm font-medium text-gray-700">
-                    City, State & ZIP
+                    Auto-detect Location
                   </h3>
-                  <LocationDetector
-                    onLocationDetected={handleLocationDetected}
-                    isLoading={loading}
-                  />
+                  <div className="flex-shrink-0">
+                    <LocationDetector
+                      onLocationDetected={handleLocationDetected}
+                      isLoading={loading}
+                      variant="compact"
+                    />
+                  </div>
                 </div>
+
+                {formData.address.coordinates && (
+                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <p className="text-sm text-green-700 font-medium">
+                        ✓ Exact location detected and saved
+                      </p>
+                    </div>
+                    <p className="text-xs text-green-600 mt-1">
+                      Your precise coordinates have been saved for accurate delivery.
+                      The exact coordinates are securely stored and not visible to others.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <input
@@ -381,6 +418,7 @@ const RegisterPage = () => {
                     onChange={handleChange}
                     className="form-input pl-3"
                     placeholder={"City"}
+                    required
                   />
                   <input
                     id="state"
@@ -390,6 +428,7 @@ const RegisterPage = () => {
                     onChange={handleChange}
                     className="form-input pl-3"
                     placeholder={"State"}
+                    required
                   />
                 </div>
 
@@ -401,6 +440,7 @@ const RegisterPage = () => {
                   onChange={handleChange}
                   className="form-input pl-3"
                   placeholder={"ZIP / Postal code"}
+                  required
                 />
               </div>
             </div>

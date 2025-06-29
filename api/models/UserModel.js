@@ -38,8 +38,24 @@ const UserSchema = new mongoose.Schema(
       state: String,
       zipCode: String,
       coordinates: {
-        lat: Number,
-        lng: Number,
+        lat: {
+          type: Number,
+          validate: {
+            validator: function (v) {
+              return v >= -90 && v <= 90;
+            },
+            message: 'Latitude must be between -90 and 90 degrees'
+          }
+        },
+        lng: {
+          type: Number,
+          validate: {
+            validator: function (v) {
+              return v >= -180 && v <= 180;
+            },
+            message: 'Longitude must be between -180 and 180 degrees'
+          }
+        }
       },
       locationDetected: {
         type: Boolean,

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateProfile } from "../redux/slices/authSlice";
 import { updateFarmerProfile, getMyFarmerProfile, getAllFarmers, clearSuccessState } from "../redux/slices/farmerSlice";
 import Loader from "../components/Loader";
+import LocationDetector from "../components/LocationDetector";
 import {
   FaUser,
   FaEnvelope,
@@ -58,6 +59,10 @@ const ProfilePage = () => {
     acceptsPickup: false,
     acceptsDelivery: false,
     deliveryRadius: 0,
+    farmLocation: {
+      coordinates: null,
+      locationDetected: false,
+    },
   });
   const [farmingPractice, setFarmingPractice] = useState("");
   const [activeTab, setActiveTab] = useState("general");
@@ -140,6 +145,10 @@ const ProfilePage = () => {
         }, acceptsPickup: myFarmerProfile.acceptsPickup || false,
         acceptsDelivery: myFarmerProfile.acceptsDelivery || false,
         deliveryRadius: myFarmerProfile.deliveryRadius || 0,
+        farmLocation: {
+          coordinates: myFarmerProfile.farmLocation?.coordinates || null,
+          locationDetected: myFarmerProfile.farmLocation?.locationDetected || false,
+        },
       });
       // Set preview URLs to existing farm images
       setFarmImagePreviewUrls(myFarmerProfile.farmImages || []);
@@ -474,6 +483,33 @@ const ProfilePage = () => {
     }
   };
 
+  // Handle location detection for user address
+  const handleLocationDetected = (locationData) => {
+    setUserForm(prev => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        street: locationData.street || prev.address.street,
+        city: locationData.city,
+        state: locationData.state,
+        zipCode: locationData.zipCode,
+        coordinates: locationData.coordinates,
+        locationDetected: locationData.locationDetected,
+      }
+    }));
+  };
+
+  // Handle farm location detection for farmers
+  const handleFarmLocationDetected = (locationData) => {
+    setFarmerForm(prev => ({
+      ...prev,
+      farmLocation: {
+        coordinates: locationData.coordinates,
+        locationDetected: locationData.locationDetected,
+      }
+    }));
+  };
+
   if (loading || farmerLoading) {
     return <Loader />;
   }
@@ -600,7 +636,32 @@ const ProfilePage = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Address</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                <h3 className="text-lg font-medium">Address & Location</h3>
+                <div className="flex-shrink-0">
+                  <LocationDetector
+                    onLocationDetected={handleLocationDetected}
+                    isLoading={loading}
+                    variant="compact"
+                  />
+                </div>
+              </div>
+
+              {userForm.address.coordinates && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <p className="text-sm text-green-700 font-medium">
+                      ✓ Exact location detected and saved
+                    </p>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">
+                    Your precise coordinates have been saved for accurate delivery.
+                    The exact coordinates are securely stored and not visible to others.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 gap-4">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -624,6 +685,7 @@ const ProfilePage = () => {
                     onChange={handleUserChange}
                     className="form-input block w-full pl-3"
                     placeholder="City"
+                    required
                   />
                   <input
                     type="text"
@@ -632,6 +694,7 @@ const ProfilePage = () => {
                     onChange={handleUserChange}
                     className="form-input block w-full pl-3"
                     placeholder="State"
+                    required
                   />
                 </div>
 
@@ -642,6 +705,7 @@ const ProfilePage = () => {
                   onChange={handleUserChange}
                   className="form-input block w-full pl-3"
                   placeholder="ZIP / Postal code"
+                  required
                 />
               </div>
             </div>
@@ -721,7 +785,52 @@ const ProfilePage = () => {
                 placeholder="Tell customers about your farm..."
                 required
               ></textarea>
-            </div>            {/* Farm Images Upload Section */}
+            </div>
+
+            {/* Farm Location Section */}
+            <div className="mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                <h3 className="text-lg font-medium">Farm Location</h3>
+                <div className="flex-shrink-0">
+                  <LocationDetector
+                    onLocationDetected={handleFarmLocationDetected}
+                    isLoading={farmerLoading}
+                    variant="compact"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 text-blue-600 mt-0.5">🏡</div>
+                  <div>
+                    <p className="text-sm text-blue-800 font-medium mb-1">
+                      Set Your Farm's Exact Location
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      This helps customers find your farm for pickups and enables accurate delivery radius calculations.
+                      Your exact coordinates are private and not displayed to customers.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {farmerForm.farmLocation?.coordinates && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <p className="text-sm text-green-700 font-medium">
+                      ✓ Farm location detected and saved
+                    </p>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1">
+                    Your farm's precise coordinates have been saved for pickup and delivery services.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Farm Images Upload Section */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Farm Images
