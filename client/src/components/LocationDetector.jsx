@@ -35,42 +35,50 @@ const LocationDetector = ({ onLocationDetected, isLoading = false, variant = 'bu
             const position = await new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, {
                     enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 0
+                    timeout: 20000, // Increased timeout
+                    maximumAge: 300000 // Cache position for 5 minutes
                 });
             });
 
             const { latitude, longitude } = position.coords;
             setLocationStatus('Location found! Getting address details...');
 
-            // Use reverse geocoding to get address details
-            // Using OpenStreetMap's Nominatim service (free, no API key required)
-            const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to get address from coordinates');
+            // Use our server-side endpoint to avoid CORS issues
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            
+            let response;
+            try {
+                response = await fetch(`${API_URL}/api/location/reverse-geocode`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: latitude,
+                        lng: longitude
+                    })
+                });
+            } catch (fetchError) {
+                throw new Error('Network error: Unable to connect to the server. Please check your internet connection.');
             }
 
-            const data = await response.json();
-            const address = data.address;
+            if (!response.ok) {
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (jsonError) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+                throw new Error(errorData.message || 'Failed to get address from coordinates');
+            }
 
-            // Extract detailed address components
-            const locationData = {
-                street: address.house_number && address.road
-                    ? `${address.house_number} ${address.road}`
-                    : address.road || address.pedestrian || address.neighbourhood || '',
-                city: address.city || address.town || address.village || address.municipality || address.county || '',
-                state: address.state || address.province || address.region || '',
-                zipCode: address.postcode || '',
-                coordinates: {
-                    lat: parseFloat(latitude),
-                    lng: parseFloat(longitude)
-                },
-                locationDetected: true,
-                fullAddress: data.display_name // Store full address for reference
-            };
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to get address from coordinates');
+            }
+
+            const locationData = result.data;
 
             setLocationStatus('✓ Location detected successfully!');
 
@@ -89,6 +97,10 @@ const LocationDetector = ({ onLocationDetected, isLoading = false, variant = 'bu
                 errorMessage = 'Location unavailable. Please check your GPS is enabled and you have internet connection.';
             } else if (err.code === 3) {
                 errorMessage = 'Location request timed out. Please ensure GPS is enabled and try again.';
+            } else if (err.message && err.message.includes('Failed to fetch')) {
+                errorMessage = 'Network error. Please check your internet connection and try again.';
+            } else if (err.message && err.message.includes('coordinates')) {
+                errorMessage = 'Unable to get address for this location. Please enter your address manually.';
             } else if (err.message) {
                 errorMessage = err.message;
             }

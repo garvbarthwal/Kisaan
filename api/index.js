@@ -11,6 +11,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const locationRoutes = require("./routes/locationRoutes");
 const connectDB = require("./db/connection");
 const translateRouter = require("./routes/translate");
 
@@ -48,6 +49,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/location", locationRoutes);
 app.use("/api/translate", express.json(), translateRouter);
 
 // Start server
