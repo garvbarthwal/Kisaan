@@ -45,7 +45,7 @@ const LocationDetector = ({ onLocationDetected, isLoading = false, variant = 'bu
 
             // Use our server-side endpoint to avoid CORS issues
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-            
+
             let response;
             try {
                 response = await fetch(`${API_URL}/api/location/reverse-geocode`, {
@@ -73,7 +73,7 @@ const LocationDetector = ({ onLocationDetected, isLoading = false, variant = 'bu
             }
 
             const result = await response.json();
-            
+
             if (!result.success) {
                 throw new Error(result.message || 'Failed to get address from coordinates');
             }
@@ -85,8 +85,8 @@ const LocationDetector = ({ onLocationDetected, isLoading = false, variant = 'bu
             // Call the callback function with the detected location
             onLocationDetected(locationData);
 
-            // Clear status after success
-            setTimeout(() => setLocationStatus(null), 3000);
+            // Clear status immediately after success
+            setTimeout(() => setLocationStatus(null), 500);
         } catch (err) {
             console.error('Error detecting location:', err);
             let errorMessage = 'Error detecting your location';
@@ -132,25 +132,27 @@ const LocationDetector = ({ onLocationDetected, isLoading = false, variant = 'bu
                 </span>
             </button>
 
-            {/* Status message */}
+            {/* Status message - Centered on screen */}
             {(locationStatus || detectingLocation) && (
-                <div className="absolute top-full left-0 mt-2 w-80 max-w-sm p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-lg z-20">
-                    <div className="flex items-start gap-3">
-                        {detectingLocation && (
-                            <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full mt-0.5 flex-shrink-0"></div>
-                        )}
-                        <div className="flex-1">
-                            <p className="text-sm text-blue-800 font-medium mb-1">
-                                {detectingLocation ? 'Detecting Location...' : 'Location Detection'}
-                            </p>
-                            <p className="text-xs text-blue-700">
-                                {locationStatus || 'Getting your exact coordinates for accurate delivery...'}
-                            </p>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 border border-blue-200">
+                        <div className="flex items-start gap-4">
                             {detectingLocation && (
-                                <p className="text-xs text-blue-600 mt-2 italic">
-                                    Please allow location access when prompted
-                                </p>
+                                <div className="animate-spin w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full mt-0.5 flex-shrink-0"></div>
                             )}
+                            <div className="flex-1">
+                                <p className="text-lg text-blue-800 font-semibold mb-2">
+                                    {detectingLocation ? 'Detecting Location...' : 'Location Detection'}
+                                </p>
+                                <p className="text-sm text-blue-700 mb-3">
+                                    {locationStatus || 'Getting your exact coordinates for accurate delivery...'}
+                                </p>
+                                {detectingLocation && (
+                                    <p className="text-sm text-blue-600 italic">
+                                        Please allow location access when prompted
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

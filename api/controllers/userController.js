@@ -149,13 +149,13 @@ exports.updateFarmerProfile = async (req, res) => {
 // @access  Private
 exports.updateUserProfile = async (req, res) => {
   try {
-    const { name, phone, address } = req.body;
+    const { name, address } = req.body;
 
     const user = await User.findById(req.user._id);
 
     if (user) {
       user.name = name || user.name;
-      user.phone = phone || user.phone;
+      // Phone number is not updatable
       user.address = address || user.address;
 
       const updatedUser = await user.save();

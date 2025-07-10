@@ -56,10 +56,6 @@ const ProfilePage = () => {
       saturday: { open: "", close: "" },
       sunday: { open: "", close: "" },
     },
-    farmLocation: {
-      coordinates: null,
-      locationDetected: false,
-    },
   });
   const [farmingPractice, setFarmingPractice] = useState("");
   const [activeTab, setActiveTab] = useState("general");
@@ -73,6 +69,10 @@ const ProfilePage = () => {
     uploadError: null,
     fileCount: 0
   });
+  // Location change states
+  const [isLocationChangeMode, setIsLocationChangeMode] = useState(false);
+  const [hasAddressChanged, setHasAddressChanged] = useState(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -140,10 +140,6 @@ const ProfilePage = () => {
             close: "",
           },
         },
-        farmLocation: {
-          coordinates: myFarmerProfile.farmLocation?.coordinates || null,
-          locationDetected: myFarmerProfile.farmLocation?.locationDetected || false,
-        },
       });
       // Set preview URLs to existing farm images
       setFarmImagePreviewUrls(myFarmerProfile.farmImages || []);
@@ -163,6 +159,19 @@ const ProfilePage = () => {
 
   const handleUserChange = (e) => {
     const { name, value } = e.target;
+
+    // Prevent phone number changes
+    if (name === "phone") {
+      return;
+    }
+
+    // Check if address fields are being changed
+    if (name.includes("address.") && (name.includes("street") || name.includes("city") || name.includes("state") || name.includes("zipCode"))) {
+      setHasAddressChanged(true);
+      setShowLocationPrompt(true);
+      // Hide prompt after 5 seconds
+      setTimeout(() => setShowLocationPrompt(false), 5000);
+    }
 
     if (name.includes(".")) {
       const [parent, child] = name.split(".");
@@ -385,7 +394,9 @@ const ProfilePage = () => {
 
   const handleUserSubmit = (e) => {
     e.preventDefault();
-    dispatch(updateProfile(userForm));
+    // Exclude phone number from update request
+    const { phone, ...updateData } = userForm;
+    dispatch(updateProfile(updateData));
   };
   const handleFarmerSubmit = async (e) => {
     e.preventDefault();
@@ -484,7 +495,7 @@ const ProfilePage = () => {
       ...prev,
       address: {
         ...prev.address,
-        street: locationData.street || prev.address.street,
+        // Only update city, state, and zipCode - keep street as is
         city: locationData.city,
         state: locationData.state,
         zipCode: locationData.zipCode,
@@ -492,17 +503,26 @@ const ProfilePage = () => {
         locationDetected: locationData.locationDetected,
       }
     }));
+    setHasAddressChanged(false);
+    setShowLocationPrompt(false);
+  };
+
+  // Handle change location button click
+  const handleChangeLocation = () => {
+    setIsLocationChangeMode(true);
+  };
+
+  // Handle cancel location change
+  const handleCancelLocationChange = () => {
+    setIsLocationChangeMode(false);
+    setHasAddressChanged(false);
+    setShowLocationPrompt(false);
   };
 
   // Handle farm location detection for farmers
   const handleFarmLocationDetected = (locationData) => {
-    setFarmerForm(prev => ({
-      ...prev,
-      farmLocation: {
-        coordinates: locationData.coordinates,
-        locationDetected: locationData.locationDetected,
-      }
-    }));
+    // Since we're removing farm location, we can remove this function
+    // or keep it empty for now
   };
 
   if (loading || farmerLoading) {
@@ -605,10 +625,13 @@ const ProfilePage = () => {
                     id="phone"
                     name="phone"
                     value={userForm.phone}
-                    onChange={handleUserChange}
-                    className="form-input pl-10 block w-full"
+                    className="form-input pl-10 block w-full bg-gray-100"
+                    disabled
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Phone number cannot be changed
+                </p>
               </div>
 
               <div>
@@ -633,14 +656,51 @@ const ProfilePage = () => {
             <div className="mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                 <h3 className="text-lg font-medium">Address & Location</h3>
-                <div className="flex-shrink-0">
-                  <LocationDetector
-                    onLocationDetected={handleLocationDetected}
-                    isLoading={loading}
-                    variant="compact"
-                  />
+                <div className="flex items-center gap-2">
+                  {!isLocationChangeMode && (
+                    <button
+                      type="button"
+                      onClick={handleChangeLocation}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                    >
+                      <FaMapMarkerAlt className="text-xs" />
+                      Change Location
+                    </button>
+                  )}
+                  {isLocationChangeMode && (
+                    <div className="flex items-center gap-2">
+                      <LocationDetector
+                        onLocationDetected={handleLocationDetected}
+                        isLoading={loading}
+                        variant="compact"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCancelLocationChange}
+                        className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {showLocationPrompt && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 text-yellow-600 mt-0.5">💡</div>
+                    <div>
+                      <p className="text-sm text-yellow-800 font-medium">
+                        Location Detection Recommended
+                      </p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        For accurate delivery, we recommend using the "Detect Location" button to automatically fill your city, state, and PIN code.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {userForm.address.coordinates && (
                 <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
@@ -680,6 +740,7 @@ const ProfilePage = () => {
                     onChange={handleUserChange}
                     className="form-input block w-full pl-3"
                     placeholder="City"
+                    disabled={!isLocationChangeMode}
                     required
                   />
                   <input
@@ -689,6 +750,7 @@ const ProfilePage = () => {
                     onChange={handleUserChange}
                     className="form-input block w-full pl-3"
                     placeholder="State"
+                    disabled={!isLocationChangeMode}
                     required
                   />
                 </div>
@@ -700,6 +762,7 @@ const ProfilePage = () => {
                   onChange={handleUserChange}
                   className="form-input block w-full pl-3"
                   placeholder="ZIP / Postal code"
+                  disabled={!isLocationChangeMode}
                   required
                 />
               </div>
@@ -780,49 +843,6 @@ const ProfilePage = () => {
                 placeholder="Tell customers about your farm..."
                 required
               ></textarea>
-            </div>
-
-            {/* Farm Location Section */}
-            <div className="mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                <h3 className="text-lg font-medium">Farm Location</h3>
-                <div className="flex-shrink-0">
-                  <LocationDetector
-                    onLocationDetected={handleFarmLocationDetected}
-                    isLoading={farmerLoading}
-                    variant="compact"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 text-blue-600 mt-0.5">🏡</div>
-                  <div>
-                    <p className="text-sm text-blue-800 font-medium mb-1">
-                      Set Your Farm's Exact Location
-                    </p>
-                    <p className="text-xs text-blue-700">
-                      This helps customers find your farm for pickups and enables accurate delivery radius calculations.
-                      Your exact coordinates are private and not displayed to customers.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {farmerForm.farmLocation?.coordinates && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <p className="text-sm text-green-700 font-medium">
-                      ✓ Farm location detected and saved
-                    </p>
-                  </div>
-                  <p className="text-xs text-green-600 mt-1">
-                    Your farm's precise coordinates have been saved for pickup and delivery services.
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Farm Images Upload Section */}
