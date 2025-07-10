@@ -6,9 +6,11 @@ import {
   resetProductSuccess,
 } from "../../redux/slices/productSlice";
 import { getCategories } from "../../redux/slices/categorySlice";
+import { getMyFarmerProfile } from "../../redux/slices/farmerSlice";
 import Loader from "../../components/Loader";
 import UploadProgress from "../../components/UploadProgress";
-import { FaArrowLeft, FaUpload, FaTimes } from "react-icons/fa";
+import { FaArrowLeft, FaUpload, FaTimes, FaTruck, FaMapMarkerAlt, FaClock, FaEdit, FaCheck, FaInfoCircle } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const AddProductPage = () => {
   const dispatch = useDispatch();
@@ -18,6 +20,8 @@ const AddProductPage = () => {
   const { categories, loading: categoriesLoading } = useSelector(
     (state) => state.categories
   );
+  const { myFarmerProfile } = useSelector((state) => state.farmers);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -30,10 +34,28 @@ const AddProductPage = () => {
     harvestDate: "",
     availableUntil: "",
     isActive: true,
+    fulfillmentOptions: {
+      delivery: false,
+      pickup: false,
+    },
+    pickupHours: null, // Will store custom pickup hours if different from business hours
   });
 
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
   const [errors, setErrors] = useState({});
+  const [showPickupModal, setShowPickupModal] = useState(false);
+  const [pickupSchedule, setPickupSchedule] = useState({
+    useBusinessHours: true,
+    customHours: {
+      monday: { open: "", close: "", closed: false },
+      tuesday: { open: "", close: "", closed: false },
+      wednesday: { open: "", close: "", closed: false },
+      thursday: { open: "", close: "", closed: false },
+      friday: { open: "", close: "", closed: false },
+      saturday: { open: "", close: "", closed: false },
+      sunday: { open: "", close: "", closed: false },
+    },
+  });
 
   // Upload progress states
   const [uploadState, setUploadState] = useState({
@@ -45,6 +67,7 @@ const AddProductPage = () => {
 
   useEffect(() => {
     dispatch(getCategories());
+    dispatch(getMyFarmerProfile());
   }, [dispatch]);
 
   useEffect(() => {
@@ -56,10 +79,48 @@ const AddProductPage = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+
+    if (name.startsWith("fulfillmentOptions.")) {
+      const option = name.split(".")[1];
+      setFormData({
+        ...formData,
+        fulfillmentOptions: {
+          ...formData.fulfillmentOptions,
+          [option]: checked,
+        },
+      });
+
+      // Show pickup modal when pickup is selected
+      if (option === "pickup" && checked) {
+        setShowPickupModal(true);
+        // Initialize custom hours with business hours if available
+        if (myFarmerProfile?.businessHours) {
+          setPickupSchedule(prev => ({
+            ...prev,
+            customHours: { ...myFarmerProfile.businessHours },
+          }));
+        }
+      }
+
+      // Show info toast when pickup is deselected
+      if (option === "pickup" && !checked) {
+        toast.info("Pickup option disabled - customers won't be able to pick up this product");
+      }
+
+      // Show info toast when delivery is selected/deselected
+      if (option === "delivery") {
+        if (checked) {
+          toast.success("Delivery enabled - you'll need to deliver this product to customers");
+        } else {
+          toast.info("Delivery disabled - customers won't be able to request delivery");
+        }
+      }
+    } else {
+      setFormData({
+        ...formData,
+        [name]: type === "checkbox" ? checked : value,
+      });
+    }
   }; const handleImageChange = async (e) => {
     const files = Array.from(e.target.files);
 
@@ -181,8 +242,114 @@ const AddProductPage = () => {
     if (!formData.quantityAvailable || formData.quantityAvailable < 0)
       newErrors.quantityAvailable = "Valid quantity is required";
 
+    // Validate fulfillment options
+    if (!formData.fulfillmentOptions.delivery && !formData.fulfillmentOptions.pickup) {
+      newErrors.fulfillmentOptions = "Please select at least one fulfillment option (Delivery or Pickup)";
+    }
+
+    // Additional validation for pickup hours if pickup is selected
+    if (formData.fulfillmentOptions.pickup) {
+      if (!formData.pickupHours && (!pickupSchedule.useBusinessHours || !myFarmerProfile?.businessHours)) {
+        newErrors.fulfillmentOptions = "Please configure pickup hours or set your business hours first";
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Pickup modal handlers
+  const handlePickupTimeChange = (day, type, value) => {
+    setPickupSchedule(prev => ({
+      ...prev,
+      customHours: {
+        ...prev.customHours,
+        [day]: {
+          ...prev.customHours[day],
+          [type]: value,
+        },
+      },
+    }));
+  };
+
+  const handlePickupClosedToggle = (day) => {
+    setPickupSchedule(prev => ({
+      ...prev,
+      customHours: {
+        ...prev.customHours,
+        [day]: {
+          ...prev.customHours[day],
+          closed: !prev.customHours[day].closed,
+          open: !prev.customHours[day].closed ? "" : prev.customHours[day].open,
+          close: !prev.customHours[day].closed ? "" : prev.customHours[day].close,
+        },
+      },
+    }));
+  };
+
+  const handleSameForAllPickupHours = () => {
+    const mondayHours = pickupSchedule.customHours.monday;
+    if (!mondayHours.closed && mondayHours.open && mondayHours.close) {
+      const newCustomHours = {};
+      Object.keys(pickupSchedule.customHours).forEach(day => {
+        newCustomHours[day] = { ...mondayHours };
+      });
+      setPickupSchedule(prev => ({
+        ...prev,
+        customHours: newCustomHours
+      }));
+      toast.success("Monday pickup hours applied to all days!");
+    } else {
+      toast.error("Please set Monday opening and closing times first!");
+    }
+  };
+
+  const handleSavePickupHours = () => {
+    if (pickupSchedule.useBusinessHours) {
+      // Validate business hours exist
+      if (!myFarmerProfile?.businessHours) {
+        toast.error("Please set your business hours first in your profile!");
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        pickupHours: null, // Use business hours
+      }));
+      toast.success("Pickup hours set to use your business hours!");
+    } else {
+      // Validate that at least one day has pickup hours
+      const hasValidDay = Object.values(pickupSchedule.customHours).some(day =>
+        !day.closed && day.open && day.close
+      );
+
+      if (!hasValidDay) {
+        toast.error("Please set pickup hours for at least one day!");
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        pickupHours: pickupSchedule.customHours,
+      }));
+      toast.success("Custom pickup hours saved successfully!");
+    }
+    setShowPickupModal(false);
+  };
+
+  const handleCancelPickupModal = () => {
+    setShowPickupModal(false);
+    // If this was the initial selection, uncheck pickup option
+    if (!formData.pickupHours && pickupSchedule.useBusinessHours) {
+      setFormData(prev => ({
+        ...prev,
+        fulfillmentOptions: {
+          ...prev.fulfillmentOptions,
+          pickup: false,
+        },
+      }));
+      toast.info("Pickup option canceled - configure pickup hours to enable pickup");
+    }
   }; const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -450,7 +617,147 @@ const AddProductPage = () => {
                 </label>
               </div>
             </div>
-          </div>          <div className="mb-6">
+          </div>
+
+          {/* Fulfillment Options */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Fulfillment Options*
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Delivery Option */}
+              <div className={`group relative p-4 border-2 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-md ${formData.fulfillmentOptions.delivery
+                  ? 'border-green-500 bg-green-50 shadow-sm'
+                  : 'border-gray-200 hover:border-green-300'
+                }`}>
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      id="delivery"
+                      name="fulfillmentOptions.delivery"
+                      checked={formData.fulfillmentOptions.delivery}
+                      onChange={handleChange}
+                      className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded transition-all"
+                    />
+                    {formData.fulfillmentOptions.delivery}
+                  </div>
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div className={`p-2 rounded-lg transition-colors ${formData.fulfillmentOptions.delivery
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-100 text-green-600 group-hover:bg-green-100'
+                      }`}>
+                      <FaTruck className="text-lg" />
+                    </div>
+                    <div>
+                      <label htmlFor="delivery" className="block text-sm font-semibold text-gray-900 cursor-pointer">
+                        Delivery
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        We'll deliver to customers
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pickup Option */}
+              <div className={`group relative p-4 border-2 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-md ${formData.fulfillmentOptions.pickup
+                  ? 'border-green-500 bg-green-50 shadow-sm'
+                  : 'border-gray-200 hover:border-green-300'
+                }`}>
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      id="pickup"
+                      name="fulfillmentOptions.pickup"
+                      checked={formData.fulfillmentOptions.pickup}
+                      onChange={handleChange}
+                      className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded transition-all"
+                    />
+                    {formData.fulfillmentOptions.pickup}
+                  </div>
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div className={`p-2 rounded-lg transition-colors ${formData.fulfillmentOptions.pickup
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-100 text-green-600 group-hover:bg-green-100'
+                      }`}>
+                      <FaMapMarkerAlt className="text-lg" />
+                    </div>
+                    <div className="flex-1">
+                      <label htmlFor="pickup" className="block text-sm font-semibold text-gray-900 cursor-pointer">
+                        Pickup
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Customers pick up from farm
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pickup Hours Configuration */}
+                {formData.fulfillmentOptions.pickup && (
+                  <div className="mt-4 pt-4 border-t border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <FaClock className="text-green-600 text-sm" />
+                        <span className="text-sm font-medium text-gray-700">
+                          {formData.pickupHours
+                            ? 'Custom pickup hours'
+                            : pickupSchedule.useBusinessHours
+                              ? 'Using business hours'
+                              : 'Hours not configured'
+                          }
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPickupModal(true)}
+                        className="flex items-center space-x-2 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <FaEdit className="text-xs" />
+                        <span>Configure</span>
+                      </button>
+                    </div>
+
+                    {/* Hours Preview */}
+                    {(formData.pickupHours || (pickupSchedule.useBusinessHours && myFarmerProfile?.businessHours)) && (
+                      <div className="mt-3 p-3 bg-white rounded-lg border border-green-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <FaInfoCircle className="text-green-600 text-sm" />
+                          <span className="text-sm font-medium text-gray-700">Pickup Hours Preview</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs">
+                          {Object.entries(
+                            formData.pickupHours ||
+                            (pickupSchedule.useBusinessHours ? myFarmerProfile?.businessHours : {})
+                          ).map(([day, hours]) => (
+                            <div key={day} className="flex justify-between items-center">
+                              <span className="capitalize text-gray-600">{day.slice(0, 3)}</span>
+                              <span className={`font-medium ${hours.closed ? 'text-red-500' : 'text-green-600'}`}>
+                                {hours.closed ? 'Closed' : `${hours.open}-${hours.close}`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            {errors.fulfillmentOptions && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <FaInfoCircle className="text-red-500 text-sm" />
+                  <p className="text-red-600 text-sm font-medium">{errors.fulfillmentOptions}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Images
             </label>
@@ -527,6 +834,199 @@ const AddProductPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Pickup Hours Modal */}
+      {showPickupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Configure Pickup Hours</h2>
+                  <p className="text-gray-600 mt-1">
+                    Set when customers can pick up this product from your farm.
+                  </p>
+                </div>
+                <button
+                  onClick={handleCancelPickupModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Use Business Hours Toggle */}
+              <div className="mb-6">
+                <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl transition-all duration-300 ${pickupSchedule.useBusinessHours
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-green-300'
+                  }`}>
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      id="useBusinessHours"
+                      checked={pickupSchedule.useBusinessHours}
+                      onChange={(e) => setPickupSchedule(prev => ({ ...prev, useBusinessHours: e.target.checked }))}
+                      className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    {pickupSchedule.useBusinessHours}
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg transition-colors ${pickupSchedule.useBusinessHours
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-100 text-green-600'
+                      }`}>
+                      <FaClock className="text-lg" />
+                    </div>
+                    <div>
+                      <label htmlFor="useBusinessHours" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                        Use my business hours for pickup
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Customers can pick up during your regular business hours
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Hours (only shown if not using business hours) */}
+              {!pickupSchedule.useBusinessHours && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Custom Pickup Hours</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Set specific hours when customers can pick up products
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSameForAllPickupHours}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                    >
+                      <FaCheck className="text-sm" />
+                      <span>Same for all</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(pickupSchedule.customHours).map(([day, hours]) => (
+                      <div key={day} className={`border-2 rounded-xl p-4 transition-all duration-300 ${hours.closed
+                          ? 'border-red-200 bg-red-50'
+                          : 'border-gray-200 hover:border-green-300'
+                        }`}>
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-semibold text-gray-900 capitalize">{day}</h4>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`${day}-closed`}
+                              checked={hours.closed}
+                              onChange={() => handlePickupClosedToggle(day)}
+                              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor={`${day}-closed`} className="text-sm font-medium text-red-600">
+                              Closed
+                            </label>
+                          </div>
+                        </div>
+
+                        {!hours.closed && (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Opening Time
+                                </label>
+                                <input
+                                  type="time"
+                                  value={hours.open}
+                                  onChange={(e) => handlePickupTimeChange(day, 'open', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Closing Time
+                                </label>
+                                <input
+                                  type="time"
+                                  value={hours.close}
+                                  onChange={(e) => handlePickupTimeChange(day, 'close', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                                />
+                              </div>
+                            </div>
+                            {hours.open && hours.close && (
+                              <div className="flex items-center space-x-2 text-xs text-green-600 bg-green-50 p-2 rounded-lg">
+                                <FaCheck className="text-green-500" />
+                                <span>Open {hours.open} - {hours.close}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Business Hours Preview (when using business hours) */}
+              {pickupSchedule.useBusinessHours && myFarmerProfile?.businessHours && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Your Business Hours</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      These hours will be used for customer pickups
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(myFarmerProfile.businessHours).map(([day, hours]) => (
+                      <div key={day} className={`border-2 rounded-xl p-4 transition-all ${hours.closed
+                          ? 'border-red-200 bg-red-50'
+                          : 'border-green-200 bg-green-50'
+                        }`}>
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-gray-900 capitalize">{day}</h4>
+                          {hours.closed ? (
+                            <span className="text-red-600 text-sm font-medium">Closed</span>
+                          ) : (
+                            <span className="text-green-600 text-sm font-medium">
+                              {hours.open} - {hours.close}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-2xl">
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={handleCancelPickupModal}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSavePickupHours}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                >
+                  Save Pickup Hours
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
