@@ -15,6 +15,7 @@ import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import BusinessHoursSetup from "./pages/BusinessHoursSetup";
 import FarmersPage from "./pages/FarmersPage";
 import FarmerDetailPage from "./pages/FarmerDetailPage";
 import ProductsPage from "./pages/ProductsPage";
@@ -82,6 +83,7 @@ function App() {
 
           {/* Farmer Routes */}
           <Route element={<FarmerRoute />}>
+            <Route path="business-hours-setup" element={<BusinessHoursSetup />} />
             <Route path="farmer/dashboard" element={<FarmerDashboardPage />} />
             <Route path="farmer/products" element={<FarmerProductsPage />} />
             <Route

@@ -4,6 +4,7 @@ const {
   getFarmerProfile,
   getMyFarmerProfile,
   updateFarmerProfile,
+  createBusinessHours,
   updateUserProfile,
   getAllUsers,
   deleteUser,
@@ -17,6 +18,7 @@ router.get("/farmers", getAllFarmers);
 
 // Private routes (must come before parameterized routes)
 router.get("/farmers/my-profile", verifyToken, isFarmer, getMyFarmerProfile);
+router.post("/farmers/business-hours", verifyToken, isFarmer, createBusinessHours);
 router.put("/profile", verifyToken, updateUserProfile);
 router.put("/farmers/profile", verifyToken, isFarmer, updateFarmerProfile);
 

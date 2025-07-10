@@ -228,3 +228,50 @@ exports.deleteUser = async (req, res) => {
       .json({ success: false, message: "Server error", error: error.message });
   }
 };
+
+// @desc    Create business hours for farmer
+// @route   POST /api/users/farmers/business-hours
+// @access  Private (Farmer only)
+exports.createBusinessHours = async (req, res) => {
+  try {
+    const { businessHours } = req.body;
+
+    // Validate that businessHours is provided
+    if (!businessHours) {
+      return res.status(400).json({
+        success: false,
+        message: "Business hours are required",
+      });
+    }
+
+    // Check if farmer already has a profile
+    let farmerProfile = await FarmerProfile.findOne({ user: req.user._id });
+
+    if (farmerProfile) {
+      // Update existing profile with business hours
+      farmerProfile.businessHours = businessHours;
+      await farmerProfile.save();
+    } else {
+      // Create a new profile with minimal required fields and business hours
+      farmerProfile = await FarmerProfile.create({
+        user: req.user._id,
+        farmName: req.user.name + "'s Farm", // Default farm name
+        description: "Farm description will be updated soon.", // Default description
+        businessHours: businessHours,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Business hours saved successfully",
+      data: farmerProfile,
+    });
+  } catch (error) {
+    console.error("Error creating business hours:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};

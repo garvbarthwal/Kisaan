@@ -13,8 +13,10 @@ import {
   FaCheck,
   FaUpload,
   FaTimes,
+  FaCheckCircle,
 } from "react-icons/fa";
 import UploadProgress from "../components/UploadProgress";
+import { toast } from "react-toastify";
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
@@ -48,13 +50,13 @@ const ProfilePage = () => {
       twitter: "",
     },
     businessHours: {
-      monday: { open: "", close: "" },
-      tuesday: { open: "", close: "" },
-      wednesday: { open: "", close: "" },
-      thursday: { open: "", close: "" },
-      friday: { open: "", close: "" },
-      saturday: { open: "", close: "" },
-      sunday: { open: "", close: "" },
+      monday: { open: "", close: "", closed: false },
+      tuesday: { open: "", close: "", closed: false },
+      wednesday: { open: "", close: "", closed: false },
+      thursday: { open: "", close: "", closed: false },
+      friday: { open: "", close: "", closed: false },
+      saturday: { open: "", close: "", closed: false },
+      sunday: { open: "", close: "", closed: false },
     },
   });
   const [farmingPractice, setFarmingPractice] = useState("");
@@ -73,6 +75,8 @@ const ProfilePage = () => {
   const [isLocationChangeMode, setIsLocationChangeMode] = useState(false);
   const [hasAddressChanged, setHasAddressChanged] = useState(false);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  // Business hours state
+  const [hasSetMondayHours, setHasSetMondayHours] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -114,30 +118,37 @@ const ProfilePage = () => {
           monday: myFarmerProfile.businessHours?.monday || {
             open: "",
             close: "",
+            closed: false,
           },
           tuesday: myFarmerProfile.businessHours?.tuesday || {
             open: "",
             close: "",
+            closed: false,
           },
           wednesday: myFarmerProfile.businessHours?.wednesday || {
             open: "",
             close: "",
+            closed: false,
           },
           thursday: myFarmerProfile.businessHours?.thursday || {
             open: "",
             close: "",
+            closed: false,
           },
           friday: myFarmerProfile.businessHours?.friday || {
             open: "",
             close: "",
+            closed: false,
           },
           saturday: myFarmerProfile.businessHours?.saturday || {
             open: "",
             close: "",
+            closed: false,
           },
           sunday: myFarmerProfile.businessHours?.sunday || {
             open: "",
             close: "",
+            closed: false,
           },
         },
       });
@@ -145,6 +156,18 @@ const ProfilePage = () => {
       setFarmImagePreviewUrls(myFarmerProfile.farmImages || []);
     }
   }, [user, myFarmerProfile]);
+
+  // Check Monday hours status when business hours change
+  useEffect(() => {
+    if (farmerForm.businessHours.monday) {
+      const mondayHours = farmerForm.businessHours.monday;
+      if (!mondayHours.closed && mondayHours.open && mondayHours.close) {
+        setHasSetMondayHours(true);
+      } else {
+        setHasSetMondayHours(false);
+      }
+    }
+  }, [farmerForm.businessHours.monday]);
 
   // Clear success state after some time
   useEffect(() => {
@@ -224,6 +247,19 @@ const ProfilePage = () => {
           },
         });
       }
+
+      // Check if this is Monday business hours and update status
+      if (parent === "businessHours" && child === "monday") {
+        const updatedMondayHours = {
+          ...farmerForm.businessHours.monday,
+          [grandchild]: value
+        };
+        if (!updatedMondayHours.closed && updatedMondayHours.open && updatedMondayHours.close) {
+          setHasSetMondayHours(true);
+        } else {
+          setHasSetMondayHours(false);
+        }
+      }
     } else {
       setFarmerForm({
         ...farmerForm,
@@ -251,7 +287,29 @@ const ProfilePage = () => {
         (_, i) => i !== index
       ),
     });
-  }; const handleFarmImageChange = async (e) => {
+  };
+
+  const handleSameForAllBusinessHours = () => {
+    const mondayHours = farmerForm.businessHours.monday;
+    if (!mondayHours.closed && mondayHours.open && mondayHours.close) {
+      const updatedBusinessHours = {};
+      const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+      daysOfWeek.forEach(day => {
+        updatedBusinessHours[day] = { ...mondayHours };
+      });
+
+      setFarmerForm({
+        ...farmerForm,
+        businessHours: updatedBusinessHours,
+      });
+      toast.success("Monday hours applied to all days!");
+    } else {
+      toast.error("Please set both opening and closing times for Monday first!");
+    }
+  };
+
+  const handleFarmImageChange = async (e) => {
     const files = Array.from(e.target.files);
     await processNewFarmImages(files);
   };
@@ -1048,32 +1106,89 @@ const ProfilePage = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Business Hours</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">Business Hours</h3>
+                {hasSetMondayHours && (
+                  <button
+                    type="button"
+                    onClick={handleSameForAllBusinessHours}
+                    className="flex items-center gap-2 text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                  >
+                    <FaCheckCircle className="text-sm" />
+                    Apply Monday to all days
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 gap-4">
                 {Object.entries(farmerForm.businessHours).map(
                   ([day, hours]) => (
                     <div
                       key={day}
-                      className="grid grid-cols-3 gap-4 items-center"
+                      className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center p-3 border border-gray-200 rounded-lg"
                     >
-                      <div className="capitalize">{day}</div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${hours.closed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                        <span className="capitalize font-medium">{day}</span>
+                        {day === "monday" && hasSetMondayHours && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            Reference
+                          </span>
+                        )}
+                      </div>
                       <div>
+                        <label className="block text-xs text-gray-600 mb-1">Opening Time</label>
                         <input
                           type="time"
                           name={`businessHours.${day}.open`}
                           value={hours.open}
                           onChange={handleFarmerChange}
-                          className="form-input"
+                          className="form-input text-sm"
+                          disabled={hours.closed}
                         />
                       </div>
                       <div>
+                        <label className="block text-xs text-gray-600 mb-1">Closing Time</label>
                         <input
                           type="time"
                           name={`businessHours.${day}.close`}
                           value={hours.close}
                           onChange={handleFarmerChange}
-                          className="form-input"
+                          className="form-input text-sm"
+                          disabled={hours.closed}
                         />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 text-sm text-gray-600">
+                          <input
+                            type="checkbox"
+                            checked={hours.closed}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setFarmerForm({
+                                ...farmerForm,
+                                businessHours: {
+                                  ...farmerForm.businessHours,
+                                  [day]: {
+                                    ...hours,
+                                    closed: isChecked,
+                                    open: isChecked ? "" : hours.open,
+                                    close: isChecked ? "" : hours.close,
+                                  },
+                                },
+                              });
+                            }}
+                            className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                          />
+                          <span className="flex items-center gap-1">
+                            <FaTimes className="text-red-500 text-xs" />
+                            Closed
+                          </span>
+                        </label>
+                        {hours.open && hours.close && !hours.closed && (
+                          <div className="text-xs text-green-600 font-medium">
+                            {hours.open} - {hours.close}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )

@@ -45,7 +45,7 @@ const RegisterPage = () => {
       if (user?.role === "admin") {
         navigate("/admin/dashboard");
       } else if (user?.role === "farmer") {
-        navigate("/farmer/dashboard");
+        navigate("/business-hours-setup");
       } else {
         navigate("/");
       }
