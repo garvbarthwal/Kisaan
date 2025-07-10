@@ -285,66 +285,28 @@ const FarmerDetailPage = () => {
                   )}
                 </div>
               </div>
-            )}            {/* Business Hours and Order Options - only show if either section has content */}
-            {profile && (
-              (profile.businessHours && Object.values(profile.businessHours).some(
-                (day) => day && day.open && day.close && day.open.trim() !== "" && day.close.trim() !== ""
-              )) ||
-              (profile.acceptsPickup || profile.acceptsDelivery)
+            )}            {/* Business Hours - only show if any day has hours set */}
+            {profile && profile.businessHours && Object.values(profile.businessHours).some(
+              (day) => day && day.open && day.close && day.open.trim() !== "" && day.close.trim() !== ""
             ) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {/* Business Hours - only show if any day has hours set */}
-                  {profile.businessHours && Object.values(profile.businessHours).some(
-                    (day) => day && day.open && day.close && day.open.trim() !== "" && day.close.trim() !== ""
-                  ) && (
-                      <div>
-                        <h3 className="text-lg font-semibold mb-3">
-                          Business Hours
-                        </h3>
-                        <div className="text-gray-700">
-                          <div className="space-y-1">
-                            {Object.entries(profile.businessHours).map(([day, hours]) => (
-                              <div key={day} className="flex justify-between">
-                                <span className="capitalize">{day}:</span>
-                                <span>
-                                  {hours?.open && hours?.close
-                                    ? `${hours.open} - ${hours.close}`
-                                    : "Closed"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">
+                    Business Hours
+                  </h3>
+                  <div className="text-gray-700">
+                    <div className="space-y-1">
+                      {Object.entries(profile.businessHours).map(([day, hours]) => (
+                        <div key={day} className="flex justify-between">
+                          <span className="capitalize">{day}:</span>
+                          <span>
+                            {hours?.open && hours?.close
+                              ? `${hours.open} - ${hours.close}`
+                              : "Closed"}
+                          </span>
                         </div>
-                      </div>
-                    )}
-
-                  {/* Order Options - only show if any option is enabled */}
-                  {(profile.acceptsPickup || profile.acceptsDelivery) && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">
-                        Order Options
-                      </h3>
-                      <div className="space-y-2">
-                        {profile.acceptsPickup && (
-                          <div className="flex items-center">
-                            <span className="w-3 h-3 rounded-full mr-2 bg-green-500"></span>
-                            Pickup
-                          </div>
-                        )}
-                        {profile.acceptsDelivery && (
-                          <div className="flex items-center">
-                            <span className="w-3 h-3 rounded-full mr-2 bg-green-500"></span>
-                            Delivery
-                            {profile.deliveryRadius && profile.deliveryRadius > 0 && (
-                              <span className="text-sm text-gray-500 ml-2">
-                                ({profile.deliveryRadius} miles radius)
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
           </div>

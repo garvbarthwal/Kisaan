@@ -105,9 +105,6 @@ exports.updateFarmerProfile = async (req, res) => {
       establishedYear,
       socialMedia,
       businessHours,
-      acceptsPickup,
-      acceptsDelivery,
-      deliveryRadius,
       farmLocation,
     } = req.body;
 
@@ -120,9 +117,6 @@ exports.updateFarmerProfile = async (req, res) => {
       establishedYear,
       socialMedia,
       businessHours,
-      acceptsPickup,
-      acceptsDelivery,
-      deliveryRadius,
       farmLocation,
     };
 

@@ -27,8 +27,6 @@ const RegisterPage = () => {
       state: "",
       zipCode: "",
     },
-    acceptsPickup: false, // Order option
-    acceptsDelivery: false, // Order option
   });
 
   const [passwordError, setPasswordError] = useState("");
@@ -59,7 +57,7 @@ const RegisterPage = () => {
       ...formData,
       address: {
         ...formData.address,
-        street: locationData.street || formData.address.street,
+        // Do NOT update street from detected location
         city: locationData.city,
         state: locationData.state,
         zipCode: locationData.zipCode,
@@ -113,11 +111,6 @@ const RegisterPage = () => {
       role: formData.role,
       phone: formData.phone,
       address: formData.address,
-      // Add order options if farmer
-      ...(formData.role === "farmer" && {
-        acceptsPickup: formData.acceptsPickup,
-        acceptsDelivery: formData.acceptsDelivery,
-      }),
     };
 
     dispatch(register(userData));
@@ -310,39 +303,6 @@ const RegisterPage = () => {
                 />
               </div>
             </div>
-
-            {formData.role === "farmer" && (
-              <>
-                {/* Order Options */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Order Options
-                  </label>
-                  <div className="flex items-center gap-6">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        name="acceptsPickup"
-                        checked={formData.acceptsPickup}
-                        onChange={handleChange}
-                        className="form-checkbox"
-                      />
-                      Accepts Pickup Orders
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        name="acceptsDelivery"
-                        checked={formData.acceptsDelivery}
-                        onChange={handleChange}
-                        className="form-checkbox"
-                      />
-                      Offers Delivery
-                    </label>
-                  </div>
-                </div>
-              </>
-            )}
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">

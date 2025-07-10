@@ -56,9 +56,6 @@ const ProfilePage = () => {
       saturday: { open: "", close: "" },
       sunday: { open: "", close: "" },
     },
-    acceptsPickup: false,
-    acceptsDelivery: false,
-    deliveryRadius: 0,
     farmLocation: {
       coordinates: null,
       locationDetected: false,
@@ -142,9 +139,7 @@ const ProfilePage = () => {
             open: "",
             close: "",
           },
-        }, acceptsPickup: myFarmerProfile.acceptsPickup || false,
-        acceptsDelivery: myFarmerProfile.acceptsDelivery || false,
-        deliveryRadius: myFarmerProfile.deliveryRadius || 0,
+        },
         farmLocation: {
           coordinates: myFarmerProfile.farmLocation?.coordinates || null,
           locationDetected: myFarmerProfile.farmLocation?.locationDetected || false,

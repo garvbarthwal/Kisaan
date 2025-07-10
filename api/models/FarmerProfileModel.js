@@ -33,18 +33,6 @@ const FarmerProfileSchema = new mongoose.Schema(
       saturday: { open: String, close: String },
       sunday: { open: String, close: String },
     },
-    acceptsPickup: {
-      type: Boolean,
-      default: false,
-    },
-    acceptsDelivery: {
-      type: Boolean,
-      default: false,
-    },
-    deliveryRadius: {
-      type: Number,
-      default: 0,
-    },
     farmLocation: {
       coordinates: {
         lat: {
