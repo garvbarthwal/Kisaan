@@ -47,6 +47,20 @@ const ProductSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    fulfillmentOptions: {
+      delivery: {
+        type: Boolean,
+        default: false,
+      },
+      pickup: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    pickupHours: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -627,8 +627,8 @@ const AddProductPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Delivery Option */}
               <div className={`group relative p-4 border-2 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-md ${formData.fulfillmentOptions.delivery
-                  ? 'border-green-500 bg-green-50 shadow-sm'
-                  : 'border-gray-200 hover:border-green-300'
+                ? 'border-green-500 bg-green-50 shadow-sm'
+                : 'border-gray-200 hover:border-green-300'
                 }`}>
                 <div className="flex items-center space-x-3">
                   <div className="relative">
@@ -644,8 +644,8 @@ const AddProductPage = () => {
                   </div>
                   <div className="flex items-center space-x-3 flex-1">
                     <div className={`p-2 rounded-lg transition-colors ${formData.fulfillmentOptions.delivery
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-green-600 group-hover:bg-green-100'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-100 text-green-600 group-hover:bg-green-100'
                       }`}>
                       <FaTruck className="text-lg" />
                     </div>
@@ -663,8 +663,8 @@ const AddProductPage = () => {
 
               {/* Pickup Option */}
               <div className={`group relative p-4 border-2 rounded-xl transition-all duration-300 cursor-pointer hover:shadow-md ${formData.fulfillmentOptions.pickup
-                  ? 'border-green-500 bg-green-50 shadow-sm'
-                  : 'border-gray-200 hover:border-green-300'
+                ? 'border-green-500 bg-green-50 shadow-sm'
+                : 'border-gray-200 hover:border-green-300'
                 }`}>
                 <div className="flex items-center space-x-3">
                   <div className="relative">
@@ -680,8 +680,8 @@ const AddProductPage = () => {
                   </div>
                   <div className="flex items-center space-x-3 flex-1">
                     <div className={`p-2 rounded-lg transition-colors ${formData.fulfillmentOptions.pickup
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-green-600 group-hover:bg-green-100'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-100 text-green-600 group-hover:bg-green-100'
                       }`}>
                       <FaMapMarkerAlt className="text-lg" />
                     </div>
@@ -733,10 +733,10 @@ const AddProductPage = () => {
                             formData.pickupHours ||
                             (pickupSchedule.useBusinessHours ? myFarmerProfile?.businessHours : {})
                           ).map(([day, hours]) => (
-                            <div key={day} className="flex justify-between items-center">
-                              <span className="capitalize text-gray-600">{day.slice(0, 3)}</span>
+                            <div key={day} className="flex flex-col items-start">
+                              <span className="capitalize text-gray-600 mb-1">{day.slice(0, 3)}</span>
                               <span className={`font-medium ${hours.closed ? 'text-red-500' : 'text-green-600'}`}>
-                                {hours.closed ? 'Closed' : `${hours.open}-${hours.close}`}
+                                {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
                               </span>
                             </div>
                           ))}
@@ -861,8 +861,8 @@ const AddProductPage = () => {
               {/* Use Business Hours Toggle */}
               <div className="mb-6">
                 <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl transition-all duration-300 ${pickupSchedule.useBusinessHours
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 hover:border-green-300'
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-200 hover:border-green-300'
                   }`}>
                   <div className="relative">
                     <input
@@ -876,8 +876,8 @@ const AddProductPage = () => {
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-lg transition-colors ${pickupSchedule.useBusinessHours
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-green-600'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-100 text-green-600'
                       }`}>
                       <FaClock className="text-lg" />
                     </div>
@@ -916,8 +916,8 @@ const AddProductPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {Object.entries(pickupSchedule.customHours).map(([day, hours]) => (
                       <div key={day} className={`border-2 rounded-xl p-4 transition-all duration-300 ${hours.closed
-                          ? 'border-red-200 bg-red-50'
-                          : 'border-gray-200 hover:border-green-300'
+                        ? 'border-red-200 bg-red-50'
+                        : 'border-gray-200 hover:border-green-300'
                         }`}>
                         <div className="flex items-center justify-between mb-4">
                           <h4 className="font-semibold text-gray-900 capitalize">{day}</h4>
@@ -987,11 +987,11 @@ const AddProductPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {Object.entries(myFarmerProfile.businessHours).map(([day, hours]) => (
                       <div key={day} className={`border-2 rounded-xl p-4 transition-all ${hours.closed
-                          ? 'border-red-200 bg-red-50'
-                          : 'border-green-200 bg-green-50'
+                        ? 'border-red-200 bg-red-50'
+                        : 'border-green-200 bg-green-50'
                         }`}>
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-gray-900 capitalize">{day}</h4>
+                        <div className="flex flex-col items-start">
+                          <h4 className="font-semibold text-gray-900 capitalize mb-1">{day}</h4>
                           {hours.closed ? (
                             <span className="text-red-600 text-sm font-medium">Closed</span>
                           ) : (
