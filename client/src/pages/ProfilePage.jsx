@@ -1196,64 +1196,7 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Order Options</h3>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="acceptsPickup"
-                    name="acceptsPickup"
-                    checked={farmerForm.acceptsPickup}
-                    onChange={handleFarmerChange}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="acceptsPickup"
-                    className="ml-2 block text-sm text-gray-900"
-                  >
-                    Accepts Pickup Orders
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="acceptsDelivery"
-                    name="acceptsDelivery"
-                    checked={farmerForm.acceptsDelivery}
-                    onChange={handleFarmerChange}
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="acceptsDelivery"
-                    className="ml-2 block text-sm text-gray-900"
-                  >
-                    Offers Delivery
-                  </label>
-                </div>
-
-                {farmerForm.acceptsDelivery && (
-                  <div>
-                    <label
-                      htmlFor="deliveryRadius"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Delivery Radius (miles)
-                    </label>
-                    <input
-                      type="number"
-                      id="deliveryRadius"
-                      name="deliveryRadius"
-                      value={farmerForm.deliveryRadius}
-                      onChange={handleFarmerChange}
-                      className="form-input w-32"
-                      min="0"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>            <button
+            <button
               type="submit"
               className="btn btn-primary"
               disabled={farmerLoading || farmImageUploadState.isUploading}

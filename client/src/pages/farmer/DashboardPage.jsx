@@ -146,9 +146,6 @@ const DashboardPage = () => {
         <div className="glass p-6 rounded-xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Unread Messages</h3>
-            <div className="bg-blue-500 text-white px-3 py-1 rounded-md font-bold">
-              Orders
-            </div>
           </div>
           <p className="text-3xl font-bold">{unreadMessages}</p>
           <Link
