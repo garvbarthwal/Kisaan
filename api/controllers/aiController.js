@@ -6,30 +6,44 @@ const isStockQuery = (query) => {
     const stockKeywords = [
         // English
         'stock', 'inventory', 'quantity', 'available', 'left', 'remaining', 'how much', 'how many',
+        'do i have', 'have i got', 'i have', 'my stock', 'my inventory', 'what do i have',
+        'show me', 'check my', 'any wheat', 'any rice', 'any tomato', 'any onion', 'any product',
         // Hindi
         'स्टॉक', 'भंडार', 'मात्रा', 'उपलब्ध', 'बचा', 'शेष', 'कितना', 'कितनी', 'कितने',
+        'मेरे पास', 'मेरा', 'क्या मेरे पास', 'दिखाओ', 'देखो', 'कोई गेहूं', 'कोई चावल',
         // Bengali
         'স্টক', 'মজুদ', 'পরিমাণ', 'উপলব্ধ', 'বাকি', 'অবশিষ্ট', 'কতটুকু', 'কত',
+        'আমার কাছে', 'আমার', 'কি আমার আছে', 'দেখাও', 'কোন গম', 'কোন চাল',
         // Telugu
         'స్టాక్', 'నిల్వ', 'పరిమాణం', 'అందుబాటులో', 'మిగిలిన', 'ఎంత', 'ఎన్ని',
+        'నా దగ్గర', 'నాకు', 'ఏదైనా గోధుమలు', 'ఏదైనా వరి', 'చూపించు',
         // Marathi
         'स्टॉक', 'साठा', 'प्रमाण', 'उपलब्ध', 'उरलेला', 'शिल्लक', 'किती',
+        'माझ्याकडे', 'माझा', 'काही गहू', 'काही तांदूळ', 'दाखवा',
         // Tamil
         'ஸ்டாக்', 'கையிருப்பு', 'அளவு', 'கிடைக்கும்', 'மிச்சம்', 'எவ்வளவு',
+        'என்னிடம்', 'என்', 'ஏதேனும் கோதுமை', 'ஏதேனும் அரிசி', 'காட்டு',
         // Gujarati
         'સ્ટોક', 'ભંડાર', 'માત્રા', 'ઉપલબ્ધ', 'બાકી', 'કેટલું', 'કેટલા',
+        'મારી પાસે', 'મારું', 'કોઈ ઘઉં', 'કોઈ ચોખા', 'બતાવો',
         // Kannada
         'ಸ್ಟಾಕ್', 'ಸಂಗ್ರಹ', 'ಪ್ರಮಾಣ', 'ಲಭ್ಯ', 'ಉಳಿದ', 'ಎಷ್ಟು',
+        'ನನ್ನ ಬಳಿ', 'ನನ್ನ', 'ಯಾವುದೇ ಗೋಧಿ', 'ಯಾವುದೇ ಅಕ್ಕಿ', 'ತೋರಿಸು',
         // Malayalam
         'സ്റ്റോക്ക്', 'സംഭരണം', 'അളവ്', 'ലഭ്യം', 'ബാക്കി', 'എത്ര',
+        'എന്റെ കയ്യിൽ', 'എന്റെ', 'എന്തെങ്കിലും ഗോതമ്പ്', 'എന്തെങ്കിലും അരി', 'കാണിക്കൂ',
         // Punjabi
         'ਸਟਾਕ', 'ਭੰਡਾਰ', 'ਮਾਤਰਾ', 'ਉਪਲਬਧ', 'ਬਾਕੀ', 'ਕਿੰਨਾ',
+        'ਮੇਰੇ ਕੋਲ', 'ਮੇਰਾ', 'ਕੋਈ ਕਣਕ', 'ਕੋਈ ਚਾਵਲ', 'ਦਿਖਾਓ',
         // Odia
         'ଷ୍ଟକ୍', 'ଭଣ୍ଡାର', 'ପରିମାଣ', 'ଉପଲବ୍ଧ', 'ବାକି', 'କେତେ',
+        'ମୋର ପାଖରେ', 'ମୋର', 'କୌଣସି ଗହମ', 'କୌଣସି ଚାଉଳ', 'ଦେଖାଅ',
         // Assamese
         'ষ্টক', 'ভাণ্ডাৰ', 'পৰিমাণ', 'উপলব্ধ', 'বাকী', 'কিমান',
+        'মোৰ ওচৰত', 'মোৰ', 'কোনো ঘেঁহু', 'কোনো চাউল', 'দেখুৱাওক',
         // Urdu
-        'اسٹاک', 'ذخیرہ', 'مقدار', 'دستیاب', 'باقی', 'کتنا'
+        'اسٹاک', 'ذخیرہ', 'مقدار', 'دستیاب', 'باقی', 'کتنا',
+        'میرے پاس', 'میرا', 'کوئی گندم', 'کوئی چاول', 'دکھائیں'
     ];
 
     return stockKeywords.some(keyword =>
@@ -884,8 +898,10 @@ Requirements:
 - Keep response under 100 words
 - Use simple, spoken language
 - Be direct and actionable
-- Don't use formatting or bullet points
+- Don't use formatting symbols like asterisks (*)
+- Don't use bullet points or lists
 - Make it sound natural when spoken aloud
+- Give practical advice specific to Indian farming
 
 Provide a brief, conversational answer:`;
 
@@ -901,9 +917,11 @@ Requirements:
 - Provide detailed, structured information
 - Include specific recommendations
 - Add relevant context and explanations
-- Use clear sections if needed
+- Use clear sections but minimize asterisks (*) - use them sparingly
 - Include practical tips and considerations
 - Make it informative for reading
+- Focus on Indian farming conditions and practices
+- Be comprehensive but not overly verbose
 
 Provide a detailed, structured answer:`;
 
@@ -940,7 +958,13 @@ Query: ${query}
 
 ${language && language !== 'en' ? `Please respond in ${language} language.` : ''}
 
-Provide practical, region-specific advice that considers Indian farming conditions, climate, and practices.`;
+Requirements:
+- Be concise and practical
+- Don't use excessive asterisks (*) or formatting symbols
+- Focus on actionable advice
+- Consider Indian farming conditions and practices
+
+Provide practical, region-specific advice:`;
 
         const result = await model.generateContent(fallbackPrompt);
         const response = await result.response;
