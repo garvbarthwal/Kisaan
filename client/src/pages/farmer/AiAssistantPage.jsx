@@ -5,9 +5,19 @@ import {
     getSupportedLanguages,
     getSampleQueries,
     setSelectedLanguage,
-    clearError
+    clearError,
+    setListeningState,
+    setSpeakingState,
+    setVoiceTranscript,
+    speechToText,
+    textToSpeech,
+    markConversationSpeechReady,
+    markConversationDisplayReady
 } from "../../redux/slices/aiSlice";
 import Loader from "../../components/Loader";
+import VoiceSettingsModal from "../../components/VoiceSettingsModal";
+import useVoiceInput from "../../hooks/useVoiceInput";
+import ttsService from "../../utils/textToSpeech";
 import {
     FaMicrophone,
     FaMicrophoneSlash,
@@ -19,7 +29,12 @@ import {
     FaLeaf,
     FaLightbulb,
     FaTimes,
-    FaBars
+    FaBars,
+    FaCog,
+    FaStop,
+    FaVolumeUp,
+    FaSpinner,
+    FaWaveSquare
 } from "react-icons/fa";
 
 const AiAssistantPage = () => {
@@ -30,17 +45,143 @@ const AiAssistantPage = () => {
         sampleQueries: apiSampleQueries,
         queryLoading,
         selectedLanguage,
-        error
+        error,
+        voiceSettings,
+        isListening: reduxIsListening,
+        isSpeaking: reduxIsSpeaking
     } = useSelector((state) => state.ai);
 
     const [query, setQuery] = useState("");
-    const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState(null);
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false);
+    const [showVoiceSettings, setShowVoiceSettings] = useState(false);
     const messagesEndRef = useRef(null);
     const chatContainerRef = useRef(null);
+    const currentSpeechRef = useRef(null);
+
+    // Enhanced voice input hook
+    const {
+        isListening,
+        transcript,
+        interimTranscript,
+        isSupported: voiceSupported,
+        startListening,
+        stopListening,
+        toggleListening,
+        resetTranscript,
+        cancelAutoSend
+    } = useVoiceInput({
+        language: selectedLanguage,
+        autoSendOnEnd: voiceSettings.autoSendOnVoiceEnd,
+        autoSendDelay: voiceSettings.voiceEndDelay || 1500,
+        onStart: () => {
+            // Stop any current speech when starting to listen
+            if (ttsService.isSpeaking()) {
+                ttsService.stop();
+                dispatch(setSpeakingState(false));
+            }
+            dispatch(setVoiceTranscript(''));
+        },
+        onResult: (text, type) => {
+            if (type === 'final') {
+                setQuery(text);
+                dispatch(setVoiceTranscript(text));
+            } else if (type === 'interim') {
+                // Show interim results in real-time
+                dispatch(setVoiceTranscript(text));
+            }
+        },
+        onEnd: (text, autoSend) => {
+            dispatch(setListeningState(false));
+            if (autoSend && text.trim()) {
+                // Auto-send the message
+                handleSubmitVoice(text.trim());
+            }
+        },
+        onError: (error) => {
+            dispatch(setListeningState(false));
+            console.error('Voice input error:', error);
+
+            // Show user-friendly error message
+            if (error === 'not-allowed') {
+                alert('Microphone access denied. Please allow microphone access and try again.');
+            } else if (error === 'no-speech') {
+                // This is normal when user doesn't speak, don't show error
+            } else {
+                console.error('Voice recognition error:', error);
+            }
+        },
+        continuous: false,
+        interimResults: true
+    });
+
+    // Update Redux state when listening state changes
+    useEffect(() => {
+        dispatch(setListeningState(isListening));
+    }, [isListening, dispatch]);
+
+    // Handle automatic speech synthesis for AI responses
+    useEffect(() => {
+        const processResponseForSpeech = async (conversation) => {
+            if (!conversation || conversation.speechReady) return;
+
+            try {
+                // Use speechAnswer if available, otherwise use answer
+                const textForSpeech = conversation.speechAnswer || conversation.answer;
+
+                // Generate smart speech text first
+                const processedText = await ttsService.generateSmartSpeechText(textForSpeech, selectedLanguage);
+
+                // Mark conversation as speech ready with processed text
+                dispatch(markConversationSpeechReady({
+                    conversationId: conversation.id,
+                    processedText: processedText
+                }));
+
+                // Start speaking if auto-speak is enabled
+                if (voiceSettings.autoSpeak && !currentSpeechRef.current) {
+                    currentSpeechRef.current = conversation.id;
+                    dispatch(setSpeakingState(true));
+
+                    await ttsService.speak(processedText, selectedLanguage, {
+                        rate: voiceSettings.speechRate,
+                        pitch: voiceSettings.speechPitch,
+                        volume: voiceSettings.speechVolume
+                    });
+
+                    dispatch(setSpeakingState(false));
+                    currentSpeechRef.current = null;
+                }
+            } catch (error) {
+                console.error('Speech processing error:', error);
+                // Mark as ready even if processing fails
+                dispatch(markConversationSpeechReady({
+                    conversationId: conversation.id,
+                    processedText: conversation.speechAnswer || conversation.answer
+                }));
+            }
+        };
+
+        // Process the latest conversation if it's not speech ready
+        if (conversations.length > 0) {
+            const latestConversation = conversations[0];
+            if (latestConversation && !latestConversation.speechReady) {
+                processResponseForSpeech(latestConversation);
+            }
+        }
+    }, [conversations, voiceSettings, selectedLanguage, dispatch]);
+
+    // Stop speech when component unmounts or language changes
+    useEffect(() => {
+        return () => {
+            if (ttsService.isSpeaking()) {
+                ttsService.stop();
+                dispatch(setSpeakingState(false));
+            }
+        };
+    }, [selectedLanguage, dispatch]);
 
     // Sample queries for suggestions - will be fetched from API
     const sampleQueries = [
@@ -148,32 +289,6 @@ const AiAssistantPage = () => {
     useEffect(() => {
         dispatch(getSupportedLanguages());
         dispatch(getSampleQueries());
-
-        // Initialize speech recognition if available
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const recognitionInstance = new SpeechRecognition();
-
-            recognitionInstance.continuous = false;
-            recognitionInstance.interimResults = false;
-            recognitionInstance.lang = getLanguageCode(selectedLanguage);
-
-            recognitionInstance.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                setQuery(transcript);
-                setIsListening(false);
-            };
-
-            recognitionInstance.onerror = () => {
-                setIsListening(false);
-            };
-
-            recognitionInstance.onend = () => {
-                setIsListening(false);
-            };
-
-            setRecognition(recognitionInstance);
-        }
     }, [dispatch, selectedLanguage]);
 
     // Auto-scroll to bottom when new messages arrive (only scroll the chat container)
@@ -251,43 +366,56 @@ const AiAssistantPage = () => {
     };
 
     const handleVoiceInput = () => {
-        if (!recognition) {
+        if (!voiceSupported) {
             alert("Speech recognition is not supported in your browser");
             return;
         }
 
-        if (isListening) {
-            recognition.stop();
-            setIsListening(false);
-        } else {
-            recognition.lang = getLanguageCode(selectedLanguage);
-            recognition.start();
-            setIsListening(true);
+        // Stop any current speech before starting to listen
+        if (ttsService.isSpeaking()) {
+            ttsService.stop();
+            dispatch(setSpeakingState(false));
         }
+
+        toggleListening();
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!query.trim()) return;
 
+        submitQuery(query.trim());
+        setQuery("");
+    };
+
+    const handleSubmitVoice = (voiceQuery) => {
+        if (!voiceQuery.trim()) return;
+        submitQuery(voiceQuery.trim());
+        resetTranscript();
+    };
+
+    const submitQuery = (queryText) => {
         const queryData = {
-            query: query.trim(),
+            query: queryText,
             language: selectedLanguage
         };
 
         dispatch(askFarmingQuery(queryData))
             .unwrap()
             .then(() => {
-                // Clear the input
-                setQuery("");
-                // Auto-scroll will be handled by useEffect
+                // Success handled by the speech effect
             })
             .catch(() => {
                 // Error is handled by the slice
             });
+    };
 
-        // Clear the input immediately to provide instant feedback
-        setQuery("");
+    const handleStopSpeech = () => {
+        if (ttsService.isSpeaking()) {
+            ttsService.stop();
+            dispatch(setSpeakingState(false));
+            currentSpeechRef.current = null;
+        }
     };
 
     const handleSampleQuery = (sampleQuery) => {
@@ -517,12 +645,170 @@ const AiAssistantPage = () => {
                                                                 <FaRobot className="text-green-500 text-xs lg:text-sm" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="text-sm lg:text-base text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
-                                                                    {conversation.answer}
-                                                                </p>
-                                                                <p className="text-xs text-gray-500 mt-2">
-                                                                    AI Assistant
-                                                                </p>
+                                                                {conversation.speechReady && conversation.displayReady ? (
+                                                                    <div className="space-y-3">
+                                                                        {/* Display detailed response if available */}
+                                                                        {conversation.hasDisplayData && conversation.type === 'stock_query' && typeof conversation.displayAnswer === 'object' ? (
+                                                                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                                                                <h4 className="font-semibold text-green-800 mb-3 flex items-center">
+                                                                                    <FaLeaf className="mr-2" />
+                                                                                    {conversation.displayAnswer.summary}
+                                                                                </h4>
+
+                                                                                {conversation.displayAnswer.products.length > 0 ? (
+                                                                                    <div className="space-y-3">
+                                                                                        {/* Product List */}
+                                                                                        <div className="grid gap-3">
+                                                                                            {conversation.displayAnswer.products.map((product, index) => (
+                                                                                                <div key={index} className="bg-white rounded-lg p-3 border border-green-100">
+                                                                                                    <div className="flex justify-between items-start mb-2">
+                                                                                                        <div>
+                                                                                                            <h5 className="font-medium text-gray-800 flex items-center">
+                                                                                                                {product.name}
+                                                                                                                {product.isOrganic && (
+                                                                                                                    <span className="ml-2 bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
+                                                                                                                        Organic
+                                                                                                                    </span>
+                                                                                                                )}
+                                                                                                            </h5>
+                                                                                                            <p className="text-sm text-gray-600">{product.category}</p>
+                                                                                                        </div>
+                                                                                                        <div className="text-right">
+                                                                                                            <p className="font-semibold text-green-600">{product.totalValueFormatted}</p>
+                                                                                                            <p className="text-xs text-gray-500">Total Value</p>
+                                                                                                        </div>
+                                                                                                    </div>
+
+                                                                                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                                                                                        <div>
+                                                                                                            <p className="text-gray-600">Quantity</p>
+                                                                                                            <p className="font-medium">{product.quantity} {product.unit}</p>
+                                                                                                        </div>
+                                                                                                        <div>
+                                                                                                            <p className="text-gray-600">Price per {product.unit}</p>
+                                                                                                            <p className="font-medium">{product.priceFormatted}</p>
+                                                                                                        </div>
+                                                                                                    </div>
+
+                                                                                                    {product.harvestDateFormatted && (
+                                                                                                        <div className="mt-2 pt-2 border-t border-gray-100">
+                                                                                                            <p className="text-xs text-gray-600">
+                                                                                                                Harvested on {product.harvestDateFormatted}
+                                                                                                                {product.daysSinceHarvest !== null && (
+                                                                                                                    <span className="ml-1">({product.daysSinceHarvest} days ago)</span>
+                                                                                                                )}
+                                                                                                            </p>
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+
+                                                                                        {/* Summary Statistics */}
+                                                                                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                                                            <h6 className="font-medium text-gray-800 mb-2">Summary</h6>
+                                                                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                                                                                                <div className="text-center">
+                                                                                                    <p className="font-semibold text-blue-600">{conversation.displayAnswer.totals.productCount}</p>
+                                                                                                    <p className="text-gray-600">Products</p>
+                                                                                                </div>
+                                                                                                <div className="text-center">
+                                                                                                    <p className="font-semibold text-green-600">{conversation.displayAnswer.totals.totalQuantity}</p>
+                                                                                                    <p className="text-gray-600">Total Items</p>
+                                                                                                </div>
+                                                                                                <div className="text-center">
+                                                                                                    <p className="font-semibold text-purple-600">{conversation.displayAnswer.totals.totalValueFormatted}</p>
+                                                                                                    <p className="text-gray-600">Total Value</p>
+                                                                                                </div>
+                                                                                                <div className="text-center">
+                                                                                                    <p className="font-semibold text-orange-600">{conversation.displayAnswer.totals.organicPercentage}%</p>
+                                                                                                    <p className="text-gray-600">Organic</p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <p className="text-gray-600 italic">{conversation.displayAnswer.message}</p>
+                                                                                )}
+                                                                            </div>
+                                                                        ) : (
+                                                                            /* Regular detailed text response */
+                                                                            <div className="prose prose-sm max-w-none">
+                                                                                <p className="text-sm lg:text-base text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
+                                                                                    {conversation.displayAnswer || conversation.processedAnswer || conversation.answer}
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <div className="flex space-x-1">
+                                                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+                                                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                                                        </div>
+                                                                        <p className="text-sm lg:text-base text-gray-600 italic">
+                                                                            Preparing response...
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex items-center justify-between mt-2">
+                                                                    <p className="text-xs text-gray-500">
+                                                                        AI Assistant
+                                                                        {reduxIsSpeaking && currentSpeechRef.current === conversation.id && (
+                                                                            <span className="ml-2 flex items-center text-green-500">
+                                                                                <FaVolumeUp className="mr-1 animate-pulse" />
+                                                                                Speaking...
+                                                                            </span>
+                                                                        )}
+                                                                    </p>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        {/* Manual Voice Control - only show if speech is ready */}
+                                                                        {conversation.speechReady && (
+                                                                            <button
+                                                                                onClick={async () => {
+                                                                                    if (reduxIsSpeaking && currentSpeechRef.current === conversation.id) {
+                                                                                        handleStopSpeech();
+                                                                                    } else {
+                                                                                        currentSpeechRef.current = conversation.id;
+                                                                                        dispatch(setSpeakingState(true));
+
+                                                                                        try {
+                                                                                            // Use processed text if available, otherwise generate it
+                                                                                            let textToSpeak = conversation.processedAnswer;
+                                                                                            if (!textToSpeak) {
+                                                                                                const sourceText = conversation.speechAnswer || conversation.answer;
+                                                                                                textToSpeak = await ttsService.generateSmartSpeechText(sourceText, selectedLanguage);
+                                                                                            }
+
+                                                                                            await ttsService.speak(textToSpeak, selectedLanguage, {
+                                                                                                rate: voiceSettings.speechRate,
+                                                                                                pitch: voiceSettings.speechPitch,
+                                                                                                volume: voiceSettings.speechVolume
+                                                                                            });
+                                                                                        } catch (error) {
+                                                                                            console.error('TTS Error:', error);
+                                                                                        } finally {
+                                                                                            dispatch(setSpeakingState(false));
+                                                                                            currentSpeechRef.current = null;
+                                                                                        }
+                                                                                    }
+                                                                                }}
+                                                                                className={`p-1 rounded-full transition-colors ${reduxIsSpeaking && currentSpeechRef.current === conversation.id
+                                                                                    ? 'text-red-500 hover:text-red-600 bg-red-50'
+                                                                                    : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
+                                                                                    }`}
+                                                                                title={reduxIsSpeaking && currentSpeechRef.current === conversation.id ? "Stop speaking" : "Read aloud"}
+                                                                            >
+                                                                                {reduxIsSpeaking && currentSpeechRef.current === conversation.id ? (
+                                                                                    <FaStop className="text-xs" />
+                                                                                ) : (
+                                                                                    <FaVolumeUp className="text-xs" />
+                                                                                )}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -555,6 +841,52 @@ const AiAssistantPage = () => {
                             <div ref={messagesEndRef} />
                         </div>
 
+                        {/* Voice Input Feedback */}
+                        {(isListening || interimTranscript) && (
+                            <div className="border-t border-gray-200 bg-gradient-to-r from-green-50 to-blue-50 p-3 lg:p-4">
+                                <div className="flex items-center space-x-3">
+                                    <div className="flex items-center space-x-2">
+                                        {isListening && (
+                                            <div className="flex space-x-1">
+                                                <div className="w-1 h-4 bg-green-500 rounded animate-pulse"></div>
+                                                <div className="w-1 h-6 bg-green-500 rounded animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                                                <div className="w-1 h-5 bg-green-500 rounded animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                                <div className="w-1 h-4 bg-green-500 rounded animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+                                            </div>
+                                        )}
+                                        <FaMicrophone className={`text-green-500 ${isListening ? 'animate-pulse' : ''}`} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-gray-600 mb-1">
+                                            {isListening ? 'Listening...' : 'Processing voice input...'}
+                                        </p>
+                                        {(interimTranscript || transcript) && (
+                                            <p className="text-sm font-medium text-gray-800 italic">
+                                                "{interimTranscript || transcript}"
+                                            </p>
+                                        )}
+                                        {voiceSettings.autoSendOnVoiceEnd && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Speech will be sent automatically when you stop speaking
+                                            </p>
+                                        )}
+                                    </div>
+                                    {isListening && (
+                                        <button
+                                            onClick={() => {
+                                                stopListening();
+                                                cancelAutoSend();
+                                            }}
+                                            className="text-red-500 hover:text-red-600 p-1"
+                                            title="Stop listening"
+                                        >
+                                            <FaStop />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Input Form */}
                         <div className="border-t border-gray-200 bg-white p-3 lg:p-4 safe-area-inset-bottom sticky bottom-0">
                             <form onSubmit={handleSubmit} className="flex space-x-2 lg:space-x-3">
@@ -585,13 +917,21 @@ const AiAssistantPage = () => {
                                     <button
                                         type="button"
                                         onClick={handleVoiceInput}
-                                        className={`absolute right-3 top-3 p-1.5 rounded-full transition-colors ${isListening
-                                            ? 'text-red-500 hover:text-red-600 bg-red-50'
+                                        className={`absolute right-3 top-3 p-1.5 rounded-full transition-all duration-200 ${isListening
+                                            ? 'text-red-500 hover:text-red-600 bg-red-50 animate-pulse scale-110'
                                             : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
                                             }`}
                                         disabled={queryLoading}
+                                        title={isListening ? "Stop listening" : "Start voice input"}
                                     >
-                                        {isListening ? <FaMicrophoneSlash className="text-sm lg:text-base" /> : <FaMicrophone className="text-sm lg:text-base" />}
+                                        {isListening ? (
+                                            <div className="relative">
+                                                <FaMicrophoneSlash className="text-sm lg:text-base" />
+                                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                                            </div>
+                                        ) : (
+                                            <FaMicrophone className="text-sm lg:text-base" />
+                                        )}
                                     </button>
                                 </div>
                                 <button
