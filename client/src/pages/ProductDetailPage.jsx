@@ -15,6 +15,9 @@ import {
   FaUser,
   FaComment,
   FaArrowLeft,
+  FaTruck,
+  FaClock,
+  FaInfoCircle,
 } from "react-icons/fa";
 import { placeholder } from "../assets";
 import { filterValidImageUrls } from "../utils/imageCleanup";
@@ -217,6 +220,79 @@ const ProductDetailPage = () => {
               <h2 className="text-lg font-semibold mb-2">Description</h2>
               <p className="text-gray-700">{product.description}</p>
             </div>
+
+            {/* Fulfillment Options Display */}
+            {(product.fulfillmentOptions?.delivery || product.fulfillmentOptions?.pickup) && (
+              <div className="border-t border-gray-200 pt-6 mb-6">
+                <h2 className="text-lg font-semibold mb-4">Fulfillment Options</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Delivery Option */}
+                  {product.fulfillmentOptions?.delivery && (
+                    <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="p-2 bg-blue-500 text-white rounded-lg">
+                        <FaTruck className="text-lg" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">Delivery Available</h3>
+                        <p className="text-xs text-gray-600">Farmer will deliver to your location</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pickup Option */}
+                  {product.fulfillmentOptions?.pickup && (
+                    <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="p-2 bg-green-500 text-white rounded-lg">
+                        <FaMapMarkerAlt className="text-lg" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-gray-900">Pickup Available</h3>
+                        <p className="text-xs text-gray-600">Pick up from farmer's location</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pickup Hours Display */}
+                {product.fulfillmentOptions?.pickup && product.pickupHours && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <FaClock className="text-green-600" />
+                      <h3 className="text-sm font-semibold text-gray-900">Pickup Hours</h3>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {Object.entries(product.pickupHours).map(([day, hours]) => (
+                        <div key={day} className="text-xs">
+                          <span className="capitalize text-gray-600">{day}:</span>
+                          <br />
+                          <span className={`font-medium ${hours.closed ? 'text-red-500' : 'text-green-600'}`}>
+                            {hours.closed ? 'Closed' : `${hours.open} - ${hours.close}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Info about fulfillment */}
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <FaInfoCircle className="text-blue-500 text-sm mt-0.5" />
+                    <div className="text-sm text-blue-700">
+                      <p className="font-medium">How it works:</p>
+                      <p className="text-xs mt-1">
+                        {product.fulfillmentOptions?.delivery && product.fulfillmentOptions?.pickup
+                          ? "You can choose between pickup and delivery during checkout."
+                          : product.fulfillmentOptions?.pickup
+                            ? "This product is available for pickup only."
+                            : "This product is available for delivery only."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {product.quantityAvailable > 0 && (
               <div className="flex flex-col md:flex-row gap-4 mb-6">

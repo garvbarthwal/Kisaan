@@ -275,3 +275,219 @@ exports.createBusinessHours = async (req, res) => {
     });
   }
 };
+
+// @desc    Get user's saved addresses
+// @route   GET /api/users/saved-addresses
+// @access  Private
+exports.getSavedAddresses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('savedAddresses');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      data: user.savedAddresses || []
+    });
+  } catch (error) {
+    console.error("Error fetching saved addresses:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
+// @desc    Add a new saved address
+// @route   POST /api/users/saved-addresses
+// @access  Private
+exports.addSavedAddress = async (req, res) => {
+  try {
+    const { name, street, city, state, zipCode, coordinates, locationDetected, isDefault } = req.body;
+
+    // Validate required fields
+    if (!city || !state || !zipCode) {
+      return res.status(400).json({
+        success: false,
+        message: "City, state, and zip code are required"
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Check if address already exists
+    const addressExists = user.savedAddresses.some(savedAddr =>
+      savedAddr.street === street &&
+      savedAddr.city === city &&
+      savedAddr.state === state &&
+      savedAddr.zipCode === zipCode
+    );
+
+    if (addressExists) {
+      return res.status(400).json({
+        success: false,
+        message: "This address is already saved"
+      });
+    }
+
+    // If this is set as default, remove default from other addresses
+    if (isDefault) {
+      user.savedAddresses.forEach(addr => {
+        addr.isDefault = false;
+      });
+    }
+
+    // Add new address
+    const newAddress = {
+      name: name || `Address ${user.savedAddresses.length + 1}`,
+      street: street || "",
+      city,
+      state,
+      zipCode,
+      coordinates: coordinates || null,
+      locationDetected: locationDetected || false,
+      isDefault: isDefault || user.savedAddresses.length === 0, // First address becomes default
+    };
+
+    user.savedAddresses.push(newAddress);
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Address saved successfully",
+      data: newAddress
+    });
+  } catch (error) {
+    console.error("Error adding saved address:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
+// @desc    Update a saved address
+// @route   PUT /api/users/saved-addresses/:addressId
+// @access  Private
+exports.updateSavedAddress = async (req, res) => {
+  try {
+    const { addressId } = req.params;
+    const { name, street, city, state, zipCode, coordinates, locationDetected, isDefault } = req.body;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const addressIndex = user.savedAddresses.findIndex(addr => addr._id.toString() === addressId);
+
+    if (addressIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found"
+      });
+    }
+
+    // If this is set as default, remove default from other addresses
+    if (isDefault) {
+      user.savedAddresses.forEach((addr, index) => {
+        if (index !== addressIndex) {
+          addr.isDefault = false;
+        }
+      });
+    }
+
+    // Update the address
+    const addressToUpdate = user.savedAddresses[addressIndex];
+    addressToUpdate.name = name || addressToUpdate.name;
+    addressToUpdate.street = street !== undefined ? street : addressToUpdate.street;
+    addressToUpdate.city = city || addressToUpdate.city;
+    addressToUpdate.state = state || addressToUpdate.state;
+    addressToUpdate.zipCode = zipCode || addressToUpdate.zipCode;
+    addressToUpdate.coordinates = coordinates !== undefined ? coordinates : addressToUpdate.coordinates;
+    addressToUpdate.locationDetected = locationDetected !== undefined ? locationDetected : addressToUpdate.locationDetected;
+    addressToUpdate.isDefault = isDefault !== undefined ? isDefault : addressToUpdate.isDefault;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Address updated successfully",
+      data: addressToUpdate
+    });
+  } catch (error) {
+    console.error("Error updating saved address:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete a saved address
+// @route   DELETE /api/users/saved-addresses/:addressId
+// @access  Private
+exports.deleteSavedAddress = async (req, res) => {
+  try {
+    const { addressId } = req.params;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const addressIndex = user.savedAddresses.findIndex(addr => addr._id.toString() === addressId);
+
+    if (addressIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found"
+      });
+    }
+
+    const wasDefault = user.savedAddresses[addressIndex].isDefault;
+    user.savedAddresses.splice(addressIndex, 1);
+
+    // If the deleted address was default and there are other addresses, make the first one default
+    if (wasDefault && user.savedAddresses.length > 0) {
+      user.savedAddresses[0].isDefault = true;
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Address deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting saved address:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};

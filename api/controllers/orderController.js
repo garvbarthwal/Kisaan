@@ -1,5 +1,6 @@
 const Order = require("../models/OrderModel");
 const Product = require("../models/ProductModel");
+const User = require("../models/UserModel");
 const { createNotificationHelper } = require("./notificationController");
 
 // @desc    Create an order
@@ -78,6 +79,41 @@ exports.createOrder = async (req, res) => {
       deliveryDetails: processedDeliveryDetails,
       notes,
     });
+
+    // Save delivery address for future use if it's a delivery order
+    if (processedDeliveryDetails && processedDeliveryDetails.address) {
+      try {
+        const user = await User.findById(req.user._id);
+        const deliveryAddress = processedDeliveryDetails.address;
+
+        // Check if this address already exists in saved addresses
+        const addressExists = user.savedAddresses.some(savedAddr =>
+          savedAddr.street === deliveryAddress.street &&
+          savedAddr.city === deliveryAddress.city &&
+          savedAddr.state === deliveryAddress.state &&
+          savedAddr.zipCode === deliveryAddress.zipCode
+        );
+
+        // Only save if it's a new address
+        if (!addressExists && deliveryAddress.city && deliveryAddress.state && deliveryAddress.zipCode) {
+          user.savedAddresses.push({
+            name: `Delivery Address ${user.savedAddresses.length + 1}`,
+            street: deliveryAddress.street || "",
+            city: deliveryAddress.city,
+            state: deliveryAddress.state,
+            zipCode: deliveryAddress.zipCode,
+            coordinates: deliveryAddress.coordinates || null,
+            locationDetected: deliveryAddress.locationDetected || false,
+            isDefault: user.savedAddresses.length === 0, // First saved address becomes default
+          });
+
+          await user.save();
+        }
+      } catch (addressError) {
+        // Don't fail the order creation if address saving fails
+        console.error("Error saving delivery address:", addressError);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -176,7 +212,7 @@ exports.getOrder = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-    .json({ success: false, message: "Server error", error: error.message });
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 

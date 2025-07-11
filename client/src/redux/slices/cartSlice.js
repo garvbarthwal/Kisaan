@@ -7,12 +7,31 @@ const cartItemsFromStorage = localStorage.getItem("cartItems")
   ? JSON.parse(localStorage.getItem("cartItems"))
   : [];
 
+// Migrate old cart items that don't have product data
+const migratedCartItems = cartItemsFromStorage.map(item => {
+  if (!item.product) {
+    // Add default product data for backward compatibility
+    item.product = {
+      _id: item.productId,
+      name: item.name,
+      images: item.image ? [item.image] : [],
+      fulfillmentOptions: { delivery: true, pickup: true }, // Default to both available
+      pickupHours: null,
+      farmer: {
+        _id: item.farmerId,
+        name: item.farmerName
+      }
+    };
+  }
+  return item;
+});
+
 const initialState = {
-  cartItems: cartItemsFromStorage,
+  cartItems: migratedCartItems,
   farmerId:
-    cartItemsFromStorage.length > 0 ? cartItemsFromStorage[0].farmerId : null,
+    migratedCartItems.length > 0 ? migratedCartItems[0].farmerId : null,
   farmerName:
-    cartItemsFromStorage.length > 0 ? cartItemsFromStorage[0].farmerName : null,
+    migratedCartItems.length > 0 ? migratedCartItems[0].farmerName : null,
 };
 
 const cartSlice = createSlice({
@@ -52,7 +71,23 @@ const cartSlice = createSlice({
 
           state.cartItems = state.cartItems.map((item) =>
             item.productId === product._id
-              ? { ...item, quantity: newTotalQuantity }
+              ? {
+                ...item,
+                quantity: newTotalQuantity,
+                // Update product data if it exists
+                product: item.product ? {
+                  ...item.product,
+                  fulfillmentOptions: product.fulfillmentOptions || item.product.fulfillmentOptions,
+                  pickupHours: product.pickupHours || item.product.pickupHours
+                } : {
+                  _id: product._id,
+                  name: product.name,
+                  images: filterValidImageUrls(product.images),
+                  fulfillmentOptions: product.fulfillmentOptions || { delivery: true, pickup: true },
+                  pickupHours: product.pickupHours || null,
+                  farmer: product.farmer
+                }
+              }
               : item
           );
           toast.info(`Updated ${product.name} quantity in your cart`);
@@ -69,6 +104,15 @@ const cartSlice = createSlice({
             unit: product.unit,
             farmerId: product.farmer._id,
             farmerName: product.farmer.name,
+            // Store the full product data for fulfillment options
+            product: {
+              _id: product._id,
+              name: product.name,
+              images: validImages,
+              fulfillmentOptions: product.fulfillmentOptions || { delivery: true, pickup: true },
+              pickupHours: product.pickupHours || null,
+              farmer: product.farmer
+            }
           });
 
           if (state.farmerId === null) {
