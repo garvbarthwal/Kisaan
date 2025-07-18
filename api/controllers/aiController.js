@@ -125,9 +125,13 @@ const isInstruction = (query) => {
     );
 
     // If no instruction words were found, then check if it's a question.
-    // If it has question words, it's NOT an instruction.
-    // If it has NEITHER, it's also NOT an instruction (default to general query).
-    return !hasQuestionWords;
+    // If it has question indicators, it's likely NOT an instruction
+    if (hasQuestionWords) {
+        return false;
+    }
+
+    // If no clear patterns found, default to NOT an instruction (general query)
+    return false;
 };
 
 // Helper function to detect inventory update queries in multiple languages
@@ -789,6 +793,64 @@ ${languageNames[targetLanguage] || targetLanguage} version:`;
     }
 };
 
+// Enhanced query classification function using Gemini AI
+const classifyQuery = async (query, language, genAI) => {
+    try {
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.0-flash",
+            generationConfig: {
+                temperature: 0.2,
+                maxOutputTokens: 50,
+            }
+        });
+
+        const classificationPrompt = `
+You are an intelligent query classifier for a farming assistant. Classify the following query into one of these categories:
+
+1. **stock_query**: Questions about current inventory, stock levels, what products are available
+   - Examples: "How much wheat do I have?", "Show my stock", "कितना चावल है?", "मेरा स्टॉक दिखाओ"
+
+2. **inventory_update**: Commands/instructions to modify inventory (add, remove, update quantities)
+   - Examples: "Add 5kg rice", "Sold 3kg wheat", "टमाटर में 2 किलो बढ़ाओ", "गेहूं 5 किलो कम करो"
+
+3. **general_farming**: All other farming-related questions (advice, pest control, fertilizers, techniques, etc.)
+   - Examples: "How to control pests?", "Best fertilizer for rice?", "जैविक खेती में कीटों को कैसे नियंत्रित करें?"
+
+Query: "${query}"
+
+Response (one word only): stock_query OR inventory_update OR general_farming`;
+
+        const result = await model.generateContent(classificationPrompt);
+        const response = await result.response;
+        const classification = response.text().trim().toLowerCase();
+
+        // Validate the response and provide fallback
+        if (['stock_query', 'inventory_update', 'general_farming'].includes(classification)) {
+            return classification;
+        }
+
+        // Fallback classification based on simple keyword matching
+        if (isStockQuery(query)) {
+            return 'stock_query';
+        } else if (isInventoryUpdateQuery(query) && isInstruction(query)) {
+            return 'inventory_update';
+        } else {
+            return 'general_farming';
+        }
+    } catch (error) {
+        console.error('Error in query classification:', error);
+
+        // Fallback to existing classification logic
+        if (isStockQuery(query)) {
+            return 'stock_query';
+        } else if (isInventoryUpdateQuery(query) && isInstruction(query)) {
+            return 'inventory_update';
+        } else {
+            return 'general_farming';
+        }
+    }
+};
+
 // @desc    Ask AI for farming advice
 // @route   POST /api/ai/ask
 // @access  Private (Farmer only)
@@ -815,56 +877,58 @@ exports.askFarmingQuery = async (req, res) => {
         // Initialize Gemini AI
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-        // Check if this is an inventory update query
-        if (isInventoryUpdateQuery(query)) {
-            // First check if it's an instruction vs question
-            if (!isInstruction(query)) {
-                // It's a question about inventory, not an instruction to update
-                // Handle as stock query instead
-                try {
-                    const productName = await extractProductFromQuery(query, language, genAI);
-                    const products = await getFarmerStock(farmerId, productName);
+        // Determine query type using improved classification
+        const queryType = await classifyQuery(query, language, genAI);
 
-                    const speechResponse = formatStockResponseForSpeech(products, query, productName);
-                    const displayResponse = formatStockResponseForDisplay(products, query, productName);
+        // Handle stock queries
+        if (queryType === 'stock_query') {
+            try {
+                const productName = await extractProductFromQuery(query, language, genAI);
+                const products = await getFarmerStock(farmerId, productName);
 
-                    let finalSpeechResponse = speechResponse;
-                    if (language && language !== 'en') {
-                        finalSpeechResponse = await translateResponse(speechResponse, language, genAI);
-                    }
+                const speechResponse = formatStockResponseForSpeech(products, query, productName);
+                const displayResponse = formatStockResponseForDisplay(products, query, productName);
 
-                    return res.json({
-                        success: true,
-                        data: {
-                            query: query,
-                            answer: finalSpeechResponse,
-                            speechAnswer: finalSpeechResponse,
-                            displayAnswer: displayResponse,
-                            language: language || 'en',
-                            type: 'stock_inquiry',
-                            hasDisplayData: true
-                        }
-                    });
-                } catch (stockError) {
-                    console.error('Stock query error:', stockError);
-                    const errorMessage = language && language !== 'en'
-                        ? await translateResponse("Sorry, I couldn't fetch your stock information at the moment.", language, genAI)
-                        : "Sorry, I couldn't fetch your stock information at the moment.";
-
-                    return res.json({
-                        success: true,
-                        data: {
-                            query: query,
-                            answer: errorMessage,
-                            speechAnswer: errorMessage,
-                            displayAnswer: errorMessage,
-                            language: language || 'en',
-                            type: 'error',
-                            hasDisplayData: false
-                        }
-                    });
+                let finalSpeechResponse = speechResponse;
+                if (language && language !== 'en') {
+                    finalSpeechResponse = await translateResponse(speechResponse, language, genAI);
                 }
+
+                return res.json({
+                    success: true,
+                    data: {
+                        query: query,
+                        answer: finalSpeechResponse,
+                        speechAnswer: finalSpeechResponse,
+                        displayAnswer: displayResponse,
+                        language: language || 'en',
+                        type: 'stock_query',
+                        hasDisplayData: true
+                    }
+                });
+            } catch (stockError) {
+                console.error('Stock query error:', stockError);
+                const errorMessage = language && language !== 'en'
+                    ? await translateResponse("Sorry, I couldn't fetch your stock information at the moment.", language, genAI)
+                    : "Sorry, I couldn't fetch your stock information at the moment.";
+
+                return res.json({
+                    success: true,
+                    data: {
+                        query: query,
+                        answer: errorMessage,
+                        speechAnswer: errorMessage,
+                        displayAnswer: errorMessage,
+                        language: language || 'en',
+                        type: 'error',
+                        hasDisplayData: false
+                    }
+                });
             }
+        }
+
+        // Handle inventory update instructions
+        if (queryType === 'inventory_update') {
 
             // It's an instruction to update inventory
             try {
@@ -998,47 +1062,7 @@ exports.askFarmingQuery = async (req, res) => {
             }
         }
 
-        // Check if this is a stock-related query
-        if (isStockQuery(query)) {
-            try {
-                // Extract product name from query (convert to English if needed)
-                const productName = await extractProductFromQuery(query, language, genAI);
-
-                // Get farmer's stock from database
-                const products = await getFarmerStock(farmerId, productName);
-
-                // Generate speech response (optimized for TTS)
-                let speechResponse = formatStockResponseForSpeech(products, query, productName);
-
-                // Generate detailed display response (optimized for screen)
-                const displayResponse = formatStockResponseForDisplay(products, query, productName);
-
-                // Translate speech response to target language if needed
-                if (language && language !== 'en') {
-                    speechResponse = await translateResponse(speechResponse, language, genAI);
-                }
-
-                return res.json({
-                    success: true,
-                    data: {
-                        query: query,
-                        answer: speechResponse, // For speech synthesis
-                        speechAnswer: speechResponse, // Explicit speech version
-                        displayAnswer: displayResponse, // Detailed version for display
-                        language: language || 'en',
-                        type: 'stock_query',
-                        productCount: products.length,
-                        totalQuantity: products.reduce((sum, p) => sum + p.quantityAvailable, 0),
-                        hasDisplayData: true
-                    }
-                });
-            } catch (stockError) {
-                console.error('Stock query error:', stockError);
-                // Fall through to regular AI query if stock query fails
-            }
-        }
-
-        // Regular AI query processing for non-stock queries
+        // For all other queries (general farming advice), use AI
         const dualResponse = await generateDualResponse(genAI, query, language);
 
         res.json({

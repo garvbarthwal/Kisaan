@@ -4,7 +4,6 @@ import {
     askFarmingQuery,
     getSupportedLanguages,
     getSampleQueries,
-    setSelectedLanguage,
     clearError,
     setListeningState,
     setSpeakingState,
@@ -24,7 +23,6 @@ import {
     FaPaperPlane,
     FaRobot,
     FaUser,
-    FaLanguage,
     FaHistory,
     FaLeaf,
     FaLightbulb,
@@ -45,16 +43,17 @@ const AiAssistantPage = () => {
         supportedLanguages,
         sampleQueries: apiSampleQueries,
         queryLoading,
-        selectedLanguage,
         error,
         voiceSettings,
         isListening: reduxIsListening,
         isSpeaking: reduxIsSpeaking
     } = useSelector((state) => state.ai);
 
+    // Get the global language from the language slice
+    const { currentLanguage: selectedLanguage } = useSelector((state) => state.language);
+
     const [query, setQuery] = useState("");
     const [recognition, setRecognition] = useState(null);
-    const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false);
     const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -372,7 +371,7 @@ const AiAssistantPage = () => {
         }
     }, [conversations, queryLoading]);
 
-    // Close sidebar when clicking outside on mobile, but not when interacting with language dropdown
+    // Close sidebar when clicking outside on mobile
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (showSidebar && !event.target.closest('.sidebar-content') && !event.target.closest('.mobile-menu-btn')) {
@@ -392,20 +391,6 @@ const AiAssistantPage = () => {
             document.body.classList.remove('sidebar-open');
         }
     }, [showSidebar]);
-
-    // Close language dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (showLanguageDropdown && !event.target.closest('.language-dropdown-container')) {
-                setShowLanguageDropdown(false);
-            }
-        };
-
-        if (showLanguageDropdown) {
-            document.addEventListener('click', handleClickOutside);
-            return () => document.removeEventListener('click', handleClickOutside);
-        }
-    }, [showLanguageDropdown]);
 
     const getLanguageCode = (langCode) => {
         const languageMap = {
@@ -484,16 +469,23 @@ const AiAssistantPage = () => {
         setQuery(queryText);
     };
 
-    const handleLanguageChange = (langCode) => {
-        dispatch(setSelectedLanguage(langCode));
-        setShowLanguageDropdown(false);
-        // Close sidebar on mobile after language selection
-        setShowSidebar(false);
-    };
-
     const getSelectedLanguageName = () => {
-        const lang = supportedLanguages.find(l => l.code === selectedLanguage);
-        return lang ? lang.nativeName : 'English';
+        const languageNames = {
+            'en': 'English',
+            'hi': 'हिंदी',
+            'bn': 'বাংলা',
+            'te': 'తెలుగు',
+            'mr': 'मराठी',
+            'ta': 'தமிழ்',
+            'gu': 'ગુજરાતી',
+            'kn': 'ಕನ್ನಡ',
+            'ml': 'മലയാളം',
+            'pa': 'ਪੰਜਾਬੀ',
+            'or': 'ଓଡ଼ିଆ',
+            'as': 'অসমীয়া',
+            'ur': 'اردو'
+        };
+        return languageNames[selectedLanguage] || 'English';
     };
 
     return (
@@ -551,44 +543,6 @@ const AiAssistantPage = () => {
                                 </div>
                             </div>
                             <p className="text-sm text-gray-600">Get expert farming advice in your language</p>
-                        </div>
-
-                        {/* Language Selector */}
-                        <div className="bg-gray-50 rounded-xl p-4">
-                            <h3 className="font-semibold mb-3 flex items-center text-sm">
-                                <FaLanguage className="mr-2 text-green-500" />
-                                Language
-                            </h3>
-                            <div className="relative language-dropdown-container">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowLanguageDropdown(!showLanguageDropdown);
-                                    }}
-                                    className="w-full p-3 border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-green-500 transition-colors bg-white"
-                                >
-                                    <span className="text-sm">{getSelectedLanguageName()}</span>
-                                    <span className="text-gray-400 text-xs">{showLanguageDropdown ? '▲' : '▼'}</span>
-                                </button>
-
-                                {showLanguageDropdown && (
-                                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl language-dropdown">
-                                        {supportedLanguages.map((lang) => (
-                                            <button
-                                                key={lang.code}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleLanguageChange(lang.code);
-                                                }}
-                                                className={`w-full p-3 text-left hover:bg-green-50 transition-colors text-sm ${selectedLanguage === lang.code ? 'bg-green-100 text-green-700' : 'text-gray-700'
-                                                    } first:rounded-t-lg last:rounded-b-lg`}
-                                            >
-                                                {lang.nativeName}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
                         </div>
 
                         {/* Sample Queries */}

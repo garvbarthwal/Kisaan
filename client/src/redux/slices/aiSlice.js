@@ -108,7 +108,6 @@ const initialState = {
     sttLoading: false,
     ttsLoading: false,
     error: null,
-    selectedLanguage: 'en',
     voiceSettings: {
         autoSpeak: true,
         autoSendOnVoiceEnd: true,
@@ -131,9 +130,6 @@ const aiSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null
-        },
-        setSelectedLanguage: (state, action) => {
-            state.selectedLanguage = action.payload
         },
         addConversation: (state, action) => {
             state.conversations.unshift(action.payload)
@@ -290,7 +286,6 @@ const aiSlice = createSlice({
 
 export const {
     clearError,
-    setSelectedLanguage,
     addConversation,
     updateConversationWithProcessedText,
     markConversationSpeechReady,
