@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
     askFarmingQuery,
     getSupportedLanguages,
@@ -38,6 +39,7 @@ import {
 
 const AiAssistantPage = () => {
     const dispatch = useDispatch();
+    const { t } = useTranslation();
     const {
         conversations,
         supportedLanguages,
@@ -682,7 +684,7 @@ const AiAssistantPage = () => {
                                                                                                                 {product.name}
                                                                                                                 {product.isOrganic && (
                                                                                                                     <span className="ml-2 bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
-                                                                                                                        Organic
+                                                                                                                        {t('stockDisplay.organic')}
                                                                                                                     </span>
                                                                                                                 )}
                                                                                                             </h5>
@@ -690,17 +692,17 @@ const AiAssistantPage = () => {
                                                                                                         </div>
                                                                                                         <div className="text-right">
                                                                                                             <p className="font-semibold text-green-600">{product.totalValueFormatted}</p>
-                                                                                                            <p className="text-xs text-gray-500">Total Value</p>
+                                                                                                            <p className="text-xs text-gray-500">{t('stockDisplay.totalValue')}</p>
                                                                                                         </div>
                                                                                                     </div>
 
                                                                                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                                                                                         <div>
-                                                                                                            <p className="text-gray-600">Quantity</p>
+                                                                                                            <p className="text-gray-600">{t('stockDisplay.quantity')}</p>
                                                                                                             <p className="font-medium">{product.quantity} {product.unit}</p>
                                                                                                         </div>
                                                                                                         <div>
-                                                                                                            <p className="text-gray-600">Price per {product.unit}</p>
+                                                                                                            <p className="text-gray-600">{t('stockDisplay.pricePerUnit', { unit: product.unit })}</p>
                                                                                                             <p className="font-medium">{product.priceFormatted}</p>
                                                                                                         </div>
                                                                                                     </div>
@@ -708,9 +710,9 @@ const AiAssistantPage = () => {
                                                                                                     {product.harvestDateFormatted && (
                                                                                                         <div className="mt-2 pt-2 border-t border-gray-100">
                                                                                                             <p className="text-xs text-gray-600">
-                                                                                                                Harvested on {product.harvestDateFormatted}
+                                                                                                                {t('stockDisplay.harvestedOn')} {product.harvestDateFormatted}
                                                                                                                 {product.daysSinceHarvest !== null && (
-                                                                                                                    <span className="ml-1">({product.daysSinceHarvest} days ago)</span>
+                                                                                                                    <span className="ml-1">({product.daysSinceHarvest} {t('stockDisplay.daysAgo')})</span>
                                                                                                                 )}
                                                                                                             </p>
                                                                                                         </div>
@@ -721,23 +723,23 @@ const AiAssistantPage = () => {
 
                                                                                         {/* Summary Statistics */}
                                                                                         <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                                                                            <h6 className="font-medium text-gray-800 mb-2">Summary</h6>
+                                                                                            <h6 className="font-medium text-gray-800 mb-2">{t('stockDisplay.summary')}</h6>
                                                                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                                                                                                 <div className="text-center">
                                                                                                     <p className="font-semibold text-blue-600">{conversation.displayAnswer.totals.productCount}</p>
-                                                                                                    <p className="text-gray-600">Products</p>
+                                                                                                    <p className="text-gray-600">{t('stockDisplay.products')}</p>
                                                                                                 </div>
                                                                                                 <div className="text-center">
                                                                                                     <p className="font-semibold text-green-600">{conversation.displayAnswer.totals.totalQuantity}</p>
-                                                                                                    <p className="text-gray-600">Total Items</p>
+                                                                                                    <p className="text-gray-600">{t('stockDisplay.totalItems')}</p>
                                                                                                 </div>
                                                                                                 <div className="text-center">
                                                                                                     <p className="font-semibold text-purple-600">{conversation.displayAnswer.totals.totalValueFormatted}</p>
-                                                                                                    <p className="text-gray-600">Total Value</p>
+                                                                                                    <p className="text-gray-600">{t('stockDisplay.totalValue')}</p>
                                                                                                 </div>
                                                                                                 <div className="text-center">
                                                                                                     <p className="font-semibold text-orange-600">{conversation.displayAnswer.totals.organicPercentage}%</p>
-                                                                                                    <p className="text-gray-600">Organic</p>
+                                                                                                    <p className="text-gray-600">{t('stockDisplay.organic')}</p>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -751,7 +753,7 @@ const AiAssistantPage = () => {
                                                                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                                                                 <h4 className="font-semibold text-blue-800 mb-3 flex items-center">
                                                                                     <FaBox className="mr-2" />
-                                                                                    Inventory Updated Successfully
+                                                                                    {t('stockDisplay.inventoryUpdatedSuccessfully')}
                                                                                 </h4>
 
                                                                                 <div className="bg-white rounded-lg p-3 border border-blue-100">
@@ -761,30 +763,30 @@ const AiAssistantPage = () => {
                                                                                         </div>
                                                                                         <div className="text-right">
                                                                                             <p className="font-semibold text-blue-600">₹{conversation.displayAnswer.product.currentValue}</p>
-                                                                                            <p className="text-xs text-gray-500">Current Value</p>
+                                                                                            <p className="text-xs text-gray-500">{t('stockDisplay.currentValue')}</p>
                                                                                         </div>
                                                                                     </div>
 
                                                                                     <div className="grid grid-cols-3 gap-3 text-sm mb-3">
                                                                                         <div className="text-center">
-                                                                                            <p className="text-gray-600">Previous</p>
+                                                                                            <p className="text-gray-600">{t('stockDisplay.previous')}</p>
                                                                                             <p className="font-medium text-gray-800">{conversation.displayAnswer.product.oldQuantity} {conversation.displayAnswer.product.unit}</p>
                                                                                         </div>
                                                                                         <div className="text-center">
-                                                                                            <p className="text-gray-600">Change</p>
+                                                                                            <p className="text-gray-600">{t('stockDisplay.change')}</p>
                                                                                             <p className={`font-medium ${conversation.displayAnswer.product.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                                                                 {conversation.displayAnswer.product.change >= 0 ? '+' : ''}{conversation.displayAnswer.product.change} {conversation.displayAnswer.product.unit}
                                                                                             </p>
                                                                                         </div>
                                                                                         <div className="text-center">
-                                                                                            <p className="text-gray-600">Current</p>
+                                                                                            <p className="text-gray-600">{t('stockDisplay.current')}</p>
                                                                                             <p className="font-medium text-blue-600">{conversation.displayAnswer.product.newQuantity} {conversation.displayAnswer.product.unit}</p>
                                                                                         </div>
                                                                                     </div>
 
                                                                                     <div className="pt-2 border-t border-gray-100">
                                                                                         <p className="text-xs text-gray-600">
-                                                                                            Price: ₹{conversation.displayAnswer.product.price} per {conversation.displayAnswer.product.unit}
+                                                                                            {t('stockDisplay.pricePerUnit', { unit: conversation.displayAnswer.product.unit })}: ₹{conversation.displayAnswer.product.price}
                                                                                         </p>
                                                                                     </div>
                                                                                 </div>
@@ -794,11 +796,11 @@ const AiAssistantPage = () => {
                                                                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                                                                 <h4 className="font-semibold text-yellow-800 mb-3 flex items-center">
                                                                                     <FaLightbulb className="mr-2" />
-                                                                                    Multiple Products Found
+                                                                                    {t('stockDisplay.multipleProductsFound')}
                                                                                 </h4>
 
                                                                                 <p className="text-sm text-gray-700 mb-3">
-                                                                                    Please specify which product you want to update:
+                                                                                    {t('stockDisplay.pleaseSpecifyProduct')}
                                                                                 </p>
 
                                                                                 <div className="grid gap-2">
@@ -810,7 +812,7 @@ const AiAssistantPage = () => {
                                                                                             </div>
                                                                                             <div className="text-right">
                                                                                                 <p className="font-medium text-gray-800">{product.quantity} {product.unit}</p>
-                                                                                                <p className="text-xs text-gray-500">Available</p>
+                                                                                                <p className="text-xs text-gray-500">{t('stockDisplay.available')}</p>
                                                                                             </div>
                                                                                         </div>
                                                                                     ))}

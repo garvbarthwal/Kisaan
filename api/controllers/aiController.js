@@ -659,10 +659,21 @@ const formatStockResponseForSpeech = (products, originalQuery, productName) => {
 };
 
 // Helper function to format detailed display response (optimized for screen display)
-const formatStockResponseForDisplay = (products, originalQuery, productName) => {
+const formatStockResponseForDisplay = async (products, originalQuery, productName, language = 'en', genAI = null) => {
     if (products.length === 0) {
+        let summary = productName === "all" ? "No products in stock" : `No ${productName} in stock`;
+        let message = productName === "all"
+            ? "You don't have any products in stock currently."
+            : `You don't have any ${productName} in stock currently.`;
+
+        // Translate empty response texts if language is not English
+        if (language && language !== 'en' && genAI) {
+            summary = await translateResponse(summary, language, genAI);
+            message = await translateResponse(message, language, genAI);
+        }
+
         const emptyResponse = {
-            summary: productName === "all" ? "No products in stock" : `No ${productName} in stock`,
+            summary: summary,
             products: [],
             totals: {
                 productCount: 0,
@@ -670,9 +681,7 @@ const formatStockResponseForDisplay = (products, originalQuery, productName) => 
                 totalValue: 0,
                 organicCount: 0
             },
-            message: productName === "all"
-                ? "You don't have any products in stock currently."
-                : `You don't have any ${productName} in stock currently.`
+            message: message
         };
         return emptyResponse;
     }
@@ -682,9 +691,46 @@ const formatStockResponseForDisplay = (products, originalQuery, productName) => 
     const totalValue = products.reduce((sum, product) => sum + (product.quantityAvailable * product.price), 0);
     const organicCount = products.filter(product => product.isOrganic).length;
 
+    // Prepare category translation for display
+    let uncategorizedText = 'Uncategorized';
+    if (language && language !== 'en' && genAI) {
+        uncategorizedText = await translateResponse('Uncategorized', language, genAI);
+    }
+
     // Format products for display
-    const formattedProducts = products.map(product => {
+    const formattedProducts = await Promise.all(products.map(async (product) => {
         const harvestDate = product.harvestDate ? new Date(product.harvestDate) : null;
+
+        // Translate category name if not in English
+        let categoryName = product.category?.name || uncategorizedText;
+        if (language && language !== 'en' && genAI && product.category?.name) {
+            try {
+                categoryName = await translateResponse(product.category.name, language, genAI);
+            } catch (error) {
+                categoryName = product.category.name; // Fallback to original if translation fails
+            }
+        }
+
+        // Format harvest date based on language
+        let harvestDateFormatted = null;
+        if (harvestDate) {
+            if (language && language !== 'en' && genAI) {
+                // For non-English languages, translate the date format
+                const day = harvestDate.getDate();
+                const month = harvestDate.toLocaleDateString('en-US', { month: 'long' });
+                const year = harvestDate.getFullYear();
+                const englishDateFormat = `${day} ${month} ${year}`;
+                try {
+                    harvestDateFormatted = await translateResponse(englishDateFormat, language, genAI);
+                } catch (error) {
+                    harvestDateFormatted = englishDateFormat; // Fallback to English format
+                }
+            } else {
+                // English format
+                harvestDateFormatted = `${harvestDate.getDate()} ${harvestDate.toLocaleDateString('en-US', { month: 'long' })} ${harvestDate.getFullYear()}`;
+            }
+        }
+
         return {
             id: product._id,
             name: product.name,
@@ -695,19 +741,27 @@ const formatStockResponseForDisplay = (products, originalQuery, productName) => 
             totalValue: product.quantityAvailable * product.price,
             totalValueFormatted: `₹${(product.quantityAvailable * product.price).toFixed(2)}`,
             isOrganic: product.isOrganic,
-            category: product.category?.name || 'Uncategorized',
+            category: categoryName,
             harvestDate: harvestDate,
-            harvestDateFormatted: harvestDate
-                ? `${harvestDate.getDate()} ${harvestDate.toLocaleDateString('en-US', { month: 'long' })} ${harvestDate.getFullYear()}`
-                : null,
+            harvestDateFormatted: harvestDateFormatted,
             daysSinceHarvest: harvestDate
                 ? Math.floor((new Date() - harvestDate) / (1000 * 60 * 60 * 24))
                 : null
         };
-    });
+    }));
+
+    // Prepare summary and message texts for translation
+    let summary = productName === "all" ? "Current Inventory" : `${productName.charAt(0).toUpperCase() + productName.slice(1)} Stock`;
+    let message = `You have ${products.length} product${products.length > 1 ? 's' : ''} with ${totalItems} total items worth ${`₹${totalValue.toFixed(2)}`}.`;
+
+    // Translate summary and message if language is not English
+    if (language && language !== 'en' && genAI) {
+        summary = await translateResponse(summary, language, genAI);
+        message = await translateResponse(message, language, genAI);
+    }
 
     return {
-        summary: productName === "all" ? "Current Inventory" : `${productName.charAt(0).toUpperCase() + productName.slice(1)} Stock`,
+        summary: summary,
         products: formattedProducts,
         totals: {
             productCount: products.length,
@@ -717,7 +771,7 @@ const formatStockResponseForDisplay = (products, originalQuery, productName) => 
             organicCount: organicCount,
             organicPercentage: products.length > 0 ? ((organicCount / products.length) * 100).toFixed(1) : 0
         },
-        message: `You have ${products.length} product${products.length > 1 ? 's' : ''} with ${totalItems} total items worth ${`₹${totalValue.toFixed(2)}`}.`
+        message: message
     };
 };
 
@@ -887,7 +941,7 @@ exports.askFarmingQuery = async (req, res) => {
                 const products = await getFarmerStock(farmerId, productName);
 
                 const speechResponse = formatStockResponseForSpeech(products, query, productName);
-                const displayResponse = formatStockResponseForDisplay(products, query, productName);
+                const displayResponse = await formatStockResponseForDisplay(products, query, productName, language, genAI);
 
                 let finalSpeechResponse = speechResponse;
                 if (language && language !== 'en') {

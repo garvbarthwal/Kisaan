@@ -69,5 +69,24 @@
     "movementDescription": "चाहे आप नए ग्राहकों तक पहुँचने वाले किसान हों या ताज़ी स्थानीय उपज चाहने वाले उपभोक्ता हों, किसान संबंध और समुदाय के लिए आपका मंच है।",
     "joinAsFarmer": "किसान के रूप में जुड़ें",
     "registerAsConsumer": "उपभोक्ता के रूप में पंजीकरण करें"
+  },
+  "stockDisplay": {
+    "organic": "जैविक",
+    "totalValue": "कुल मूल्य",
+    "quantity": "मात्रा",
+    "pricePerUnit": "प्रति {unit} मूल्य",
+    "harvestedOn": "इस दिन काटा गया:",
+    "daysAgo": "दिन पहले",
+    "summary": "सारांश",
+    "products": "उत्पाद",
+    "totalItems": "कुल आइटम",
+    "inventoryUpdatedSuccessfully": "इन्वेंटरी सफलतापूर्वक अपडेट हुई",
+    "multipleProductsFound": "कई उत्पाद मिले",
+    "pleaseSpecifyProduct": "कृपया बताएं कि आप कौन सा उत्पाद अपडेट करना चाहते हैं:",
+    "available": "उपलब्ध",
+    "previous": "पिछला",
+    "change": "परिवर्तन",
+    "current": "वर्तमान",
+    "currentValue": "वर्तमान मूल्य"
   }
 }

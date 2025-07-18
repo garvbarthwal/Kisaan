@@ -69,5 +69,24 @@
     "movementDescription": "Whether you're a farmer looking to reach new customers or a consumer seeking fresh local produce, Kisaan is your platform for connection and community.",
     "joinAsFarmer": "Join as Farmer",
     "registerAsConsumer": "Register as Consumer"
+  },
+  "stockDisplay": {
+    "organic": "Organic",
+    "totalValue": "Total Value",
+    "quantity": "Quantity",
+    "pricePerUnit": "Price per {unit}",
+    "harvestedOn": "Harvested on",
+    "daysAgo": "days ago",
+    "summary": "Summary",
+    "products": "Products",
+    "totalItems": "Total Items",
+    "inventoryUpdatedSuccessfully": "Inventory Updated Successfully",
+    "multipleProductsFound": "Multiple Products Found",
+    "pleaseSpecifyProduct": "Please specify which product you want to update:",
+    "available": "Available",
+    "previous": "Previous",
+    "change": "Change",
+    "current": "Current",
+    "currentValue": "Current Value"
   }
 }
