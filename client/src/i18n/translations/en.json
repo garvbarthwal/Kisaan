@@ -88,5 +88,18 @@
     "change": "Change",
     "current": "Current",
     "currentValue": "Current Value"
+  },
+  "messaging": {
+    "translate": "Translate",
+    "showOriginal": "Show Original",
+    "translating": "Translating...",
+    "translationFailed": "Translation failed. Please try again later.",
+    "backToMessages": "Back to Messages",
+    "conversation": "Conversation",
+    "noMessages": "No messages yet. Start the conversation!",
+    "typeMessage": "Type your message...",
+    "startVoiceInput": "Start Voice Input",
+    "stopListening": "Stop Listening",
+    "sendMessage": "Send Message"
   }
 }

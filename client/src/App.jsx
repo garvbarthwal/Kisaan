@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loadUser } from "./redux/slices/authSlice";
+import { useLanguageSync } from "./hooks/useLanguageSync";
 import Layout from "./components/Layout";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
@@ -48,6 +49,9 @@ import AdminOrdersPage from "./pages/admin/OrdersPage";
 
 function App() {
   const dispatch = useDispatch();
+
+  // Sync user's preferred language with i18n
+  useLanguageSync();
 
   useEffect(() => {
     // Only try to load user if there's a token in localStorage

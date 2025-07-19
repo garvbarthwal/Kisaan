@@ -69,5 +69,18 @@
     "categories": "ਸ਼੍ਰੇਣੀਆਂ",
     "support": "ਸਹਾਇਤਾ",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "ਪੰਜਾਬੀ ਵਿੱਚ ਦੇਖੋ",
+    "showOriginal": "ਮੂਲ ਦੇਖੋ",
+    "translating": "ਅਨੁਵਾਦ ਹੋ ਰਿਹਾ ਹੈ...",
+    "translationFailed": "ਅਨੁਵਾਦ ਅਸਫਲ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    "backToMessages": "ਸੁਨੇਹਿਆਂ ਵਿੱਚ ਵਾਪਸ ਜਾਓ",
+    "conversation": "ਗੱਲਬਾਤ",
+    "noMessages": "ਅਜੇ ਤੱਕ ਕੋਈ ਸੁਨੇਹੇ ਨਹੀਂ। ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ!",
+    "typeMessage": "ਆਪਣਾ ਸੁਨੇਹਾ ਟਾਈਪ ਕਰੋ...",
+    "startVoiceInput": "ਆਵਾਜ਼ ਇਨਪੁੱਟ ਸ਼ੁਰੂ ਕਰੋ",
+    "stopListening": "ਸੁਣਨਾ ਬੰਦ ਕਰੋ",
+    "sendMessage": "ਸੁਨੇਹਾ ਭੇਜੋ"
   }
 }

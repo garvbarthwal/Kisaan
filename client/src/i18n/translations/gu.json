@@ -69,5 +69,18 @@
     "categories": "શ્રેણીઓ",
     "support": "આધાર",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "ગુજરાતીમાં જુઓ",
+    "showOriginal": "મૂળ જુઓ",
+    "translating": "અનુવાદ થઈ રહ્યો છે...",
+    "translationFailed": "અનુવાદ નિષ્ફળ ગયો. કૃપા કરીને ફરીથી પ્રયાસ કરો.",
+    "backToMessages": "સંદેશાઓ પર પાછા જાઓ",
+    "conversation": "વાતચીત",
+    "noMessages": "હજી કોઈ સંદેશાઓ નથી. વાતચીત શરૂ કરો!",
+    "typeMessage": "તમારો સંદેશ ટાઈપ કરો...",
+    "startVoiceInput": "વૉઇસ ઇનપુટ શરૂ કરો",
+    "stopListening": "સાંભળવાનું બંધ કરો",
+    "sendMessage": "સંદેશ મોકલો"
   }
 }

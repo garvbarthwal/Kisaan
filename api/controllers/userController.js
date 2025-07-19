@@ -544,3 +544,44 @@ exports.deleteSavedAddress = async (req, res) => {
     });
   }
 };
+
+// @desc    Update user preferred language
+// @route   PUT /api/users/language
+// @access  Private
+exports.updatePreferredLanguage = async (req, res) => {
+  try {
+    const { language } = req.body;
+
+    // Validate language
+    const supportedLanguages = ["en", "hi", "bn", "te", "mr", "ta", "gu", "kn", "ml", "pa", "or", "as", "ur"];
+    if (!language || !supportedLanguages.includes(language)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing language. Supported languages: " + supportedLanguages.join(", ")
+      });
+    }
+
+    // Update user's preferred language
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { preferredLanguage: language },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    res.json({
+      success: true,
+      message: "Preferred language updated successfully",
+      data: {
+        preferredLanguage: user.preferredLanguage
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};

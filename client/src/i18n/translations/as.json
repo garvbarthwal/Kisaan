@@ -69,5 +69,18 @@
     "categories": "শ্ৰেণীসমূহ",
     "support": "সহায়তা",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "অসমীয়াত চাওক",
+    "showOriginal": "মূল চাওক",
+    "translating": "অনুবাদ হৈ আছে...",
+    "translationFailed": "অনুবাদ বিফল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।",
+    "backToMessages": "বাৰ্তালৈ উভতি যাওক",
+    "conversation": "কথোপকথন",
+    "noMessages": "এতিয়ালৈকে কোনো বাৰ্তা নাই। কথোপকথন আৰম্ভ কৰক!",
+    "typeMessage": "আপোনাৰ বাৰ্তা টাইপ কৰক...",
+    "startVoiceInput": "ভয়েচ ইনপুট আৰম্ভ কৰক",
+    "stopListening": "শুনা বন্ধ কৰক",
+    "sendMessage": "বাৰ্তা পঠিয়াওক"
   }
 }

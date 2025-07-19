@@ -69,5 +69,18 @@
     "categories": "اقسام",
     "support": "سپورٹ",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "اردو میں دیکھیں",
+    "showOriginal": "اصل دیکھیں",
+    "translating": "ترجمہ ہو رہا ہے...",
+    "translationFailed": "ترجمہ ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
+    "backToMessages": "پیغامات میں واپس جائیں",
+    "conversation": "گفتگو",
+    "noMessages": "ابھی تک کوئی پیغام نہیں۔ گفتگو شروع کریں!",
+    "typeMessage": "اپنا پیغام ٹائپ کریں...",
+    "startVoiceInput": "آواز ان پٹ شروع کریں",
+    "stopListening": "سننا بند کریں",
+    "sendMessage": "پیغام بھیجیں"
   }
 }

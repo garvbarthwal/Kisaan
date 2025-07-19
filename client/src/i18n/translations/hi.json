@@ -88,5 +88,18 @@
     "change": "परिवर्तन",
     "current": "वर्तमान",
     "currentValue": "वर्तमान मूल्य"
+  },
+  "messaging": {
+    "translate": "हिंदी में देखें",
+    "showOriginal": "मूल रूप देखें",
+    "translating": "अनुवाद हो रहा है...",
+    "translationFailed": "अनुवाद विफल रहा। बाद में पुनः प्रयास करें।",
+    "backToMessages": "संदेशों पर वापस जाएं",
+    "conversation": "बातचीत",
+    "noMessages": "अभी तक कोई संदेश नहीं। बातचीत शुरू करें!",
+    "typeMessage": "अपना संदेश लिखें...",
+    "startVoiceInput": "आवाज़ इनपुट शुरू करें",
+    "stopListening": "सुनना बंद करें",
+    "sendMessage": "संदेश भेजें"
   }
 }

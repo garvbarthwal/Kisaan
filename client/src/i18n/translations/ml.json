@@ -69,5 +69,18 @@
     "categories": "വിഭാഗങ്ങൾ",
     "support": "പിന്തുണ",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "മലയാളത്തിൽ കാണുക",
+    "showOriginal": "മൂലം കാണുക",
+    "translating": "പരിഭാഷപ്പെടുത്തുന്നു...",
+    "translationFailed": "പരിഭാഷ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+    "backToMessages": "സന്ദേശങ്ങളിലേക്ക് മടങ്ങുക",
+    "conversation": "സംഭാഷണം",
+    "noMessages": "ഇതുവരെ സന്ദേശങ്ങളൊന്നുമില്ല. സംഭാഷണം ആരംഭിക്കുക!",
+    "typeMessage": "നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്യുക...",
+    "startVoiceInput": "വോയിസ് ഇൻപുട്ട് ആരംഭിക്കുക",
+    "stopListening": "കേൾക്കുന്നത് നിർത്തുക",
+    "sendMessage": "സന്ദേശം അയയ്ക്കുക"
   }
 }

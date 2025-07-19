@@ -56,6 +56,7 @@ exports.register = async (req, res) => {
           role: user.role,
           phone: user.phone,
           address: user.address,
+          preferredLanguage: user.preferredLanguage,
         },
         token: generateToken(user._id),
       });
@@ -106,6 +107,7 @@ exports.login = async (req, res) => {
         role: user.role,
         phone: user.phone,
         address: user.address,
+        preferredLanguage: user.preferredLanguage,
       },
       token: generateToken(user._id),
     });

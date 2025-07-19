@@ -69,5 +69,18 @@
     "categories": "বিভাগসমূহ",
     "support": "সহায়তা",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "বাংলায় দেখুন",
+    "showOriginal": "মূল দেখুন",
+    "translating": "অনুবাদ হচ্ছে...",
+    "translationFailed": "অনুবাদ ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।",
+    "backToMessages": "বার্তায় ফিরে যান",
+    "conversation": "কথোপকথন",
+    "noMessages": "এখনো কোনো বার্তা নেই। কথোপকথন শুরু করুন!",
+    "typeMessage": "আপনার বার্তা লিখুন...",
+    "startVoiceInput": "ভয়েস ইনপুট শুরু করুন",
+    "stopListening": "শোনা বন্ধ করুন",
+    "sendMessage": "বার্তা পাঠান"
   }
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
   getConversationMessages,
   sendMessage,
@@ -19,6 +20,7 @@ import {
 const ConversationPage = () => {
   const { userId } = useParams();
   const dispatch = useDispatch();
+  const { t, i18n } = useTranslation();
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -27,12 +29,13 @@ const ConversationPage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
-  const [translations, setTranslations] = useState({}); // messageId -> { translated, showOriginal }
+  const [translations, setTranslations] = useState({}); // messageId -> { translated, showOriginal, buttonTexts }
 
   const { messages, loading } = useSelector((state) => state.messages);
   const { user } = useSelector((state) => state.auth);
 
   const conversationMessages = messages[userId] || [];
+  const currentUserLanguage = i18n.language || 'en';
 
   useEffect(() => {
     // Fetch messages and mark as read initially
@@ -102,7 +105,7 @@ const ConversationPage = () => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
-  const handleTranslate = async (messageId, text) => {
+  const handleTranslate = async (messageId, text, senderLanguage = null) => {
     if (translations[messageId]) {
       setTranslations((prev) => ({
         ...prev,
@@ -114,18 +117,30 @@ const ConversationPage = () => {
       return;
     }
 
-    // Show loading state
+    // Determine target language based on current user's language
+    const targetLanguage = currentUserLanguage;
+
+    // Show loading state with localized text
     setTranslations((prev) => ({
       ...prev,
       [messageId]: {
-        translated: "अनुवाद हो रहा है... (Translating...)",
+        translated: t('messaging.translating') || "Translating...",
         showOriginal: false,
-        loading: true
+        loading: true,
+        buttonTexts: {
+          translate: t('messaging.translate'),
+          showOriginal: t('messaging.showOriginal')
+        }
       },
     }));
 
     try {
-      const res = await axios.post("/api/translate", { text });
+      const res = await axios.post("/api/translate", {
+        text,
+        targetLanguage,
+        userLanguage: currentUserLanguage,
+        sourceLanguage: senderLanguage || 'auto'
+      });
 
       if (res.data && res.data.translated) {
         setTranslations((prev) => ({
@@ -133,7 +148,11 @@ const ConversationPage = () => {
           [messageId]: {
             translated: res.data.translated,
             showOriginal: false,
-            loading: false
+            loading: false,
+            buttonTexts: res.data.buttonTexts || {
+              translate: t('messaging.translate'),
+              showOriginal: t('messaging.showOriginal')
+            }
           },
         }));
       } else {
@@ -144,9 +163,13 @@ const ConversationPage = () => {
       setTranslations((prev) => ({
         ...prev,
         [messageId]: {
-          translated: "⚠️ अनुवाद विफल रहा। बाद में पुनः प्रयास करें। (Translation failed. Please try again later.)",
+          translated: t('messaging.translationFailed') || "Translation failed. Please try again later.",
           showOriginal: false,
-          loading: false
+          loading: false,
+          buttonTexts: {
+            translate: t('messaging.translate'),
+            showOriginal: t('messaging.showOriginal')
+          }
         },
       }));
     }
@@ -161,7 +184,7 @@ const ConversationPage = () => {
         className="flex items-center text-green-500 hover:text-green-700 mb-6"
       >
         <FaArrowLeft className="mr-2" />
-        Back to Messages
+        {t('messaging.backToMessages')}
       </Link>
 
       <div className="glass rounded-xl overflow-hidden">
@@ -171,7 +194,7 @@ const ConversationPage = () => {
               ? conversationMessages[0].sender._id === user._id
                 ? conversationMessages[0].receiver.name
                 : conversationMessages[0].sender.name
-              : "Conversation"}
+              : t('messaging.conversation')}
           </h2>
         </div>
 
@@ -183,7 +206,7 @@ const ConversationPage = () => {
             <div className="space-y-4">
               {conversationMessages.map((message) => {
                 const isMe = message.sender._id === user._id;
-                const t = translations[message._id];
+                const messageTranslation = translations[message._id];
 
                 return (
                   <div
@@ -197,7 +220,7 @@ const ConversationPage = () => {
                         }`}
                     >
                       <p className="mb-1">
-                        {t ? (t.showOriginal ? message.content : t.translated) : message.content}
+                        {messageTranslation ? (messageTranslation.showOriginal ? message.content : messageTranslation.translated) : message.content}
                       </p>                      <div className="flex justify-between items-center mt-1">
                         <span
                           className={`text-xs ${isMe ? "text-green-100" : "text-gray-500"
@@ -207,14 +230,15 @@ const ConversationPage = () => {
                         </span>
                         {!isMe && (
                           <button
-                            onClick={() => handleTranslate(message._id, message.content)}
-                            className={`ml-2 text-xs ${t?.loading ? "text-gray-400" : "text-blue-500 hover:underline"} flex items-center gap-1`}
-                            disabled={t?.loading}
+                            onClick={() => handleTranslate(message._id, message.content, message.sender?.preferredLanguage)}
+                            className={`ml-2 text-xs ${messageTranslation?.loading ? "text-gray-400" : "text-blue-500 hover:underline"} flex items-center gap-1`}
+                            disabled={messageTranslation?.loading}
                           >
-                            <FaGlobe className={t?.loading ? "animate-spin" : ""} />                            {t ? (
-                              t.loading ? "अनुवाद हो रहा है..." :
-                                t.showOriginal ? "हिंदी में देखें" : "Show Original"
-                            ) : "हिंदी में देखें"}
+                            <FaGlobe className={messageTranslation?.loading ? "animate-spin" : ""} />
+                            {messageTranslation ? (
+                              messageTranslation.loading ? (messageTranslation.buttonTexts?.translate || t('messaging.translating')) :
+                                messageTranslation.showOriginal ? (messageTranslation.buttonTexts?.translate || t('messaging.translate')) : (messageTranslation.buttonTexts?.showOriginal || t('messaging.showOriginal'))
+                            ) : (t('messaging.translate'))}
                           </button>
                         )}
                       </div>
@@ -226,7 +250,7 @@ const ConversationPage = () => {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center">
-              <p className="text-gray-500">No messages yet. Start the conversation!</p>
+              <p className="text-gray-500">{t('messaging.noMessages')}</p>
             </div>
           )}
         </div>
@@ -239,7 +263,7 @@ const ConversationPage = () => {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               className="form-input flex-grow"
-              placeholder="   Type your message ..."
+              placeholder={t('messaging.typeMessage')}
             />
             <button
               type="button"
@@ -248,7 +272,7 @@ const ConversationPage = () => {
                 ? "bg-red-100 text-red-600 hover:bg-red-200"
                 : "bg-gray-100 text-gray-500 hover:bg-green-100"
                 }`}
-              title={isListening ? "Stop Listening" : "Start Voice Input"}
+              title={isListening ? t('messaging.stopListening') : t('messaging.startVoiceInput')}
             >
               {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
             </button>

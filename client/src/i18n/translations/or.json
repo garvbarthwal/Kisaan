@@ -69,5 +69,18 @@
     "categories": "ବର୍ଗ",
     "support": "ସହାୟତା",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "ଓଡ଼ିଆରେ ଦେଖନ୍ତୁ",
+    "showOriginal": "ମୂଳ ଦେଖନ୍ତୁ",
+    "translating": "ଅନୁବାଦ ହେଉଛି...",
+    "translationFailed": "ଅନୁବାଦ ବିଫଳ। ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ।",
+    "backToMessages": "ବାର୍ତ୍ତାକୁ ଫେରନ୍ତୁ",
+    "conversation": "ବାର୍ତ୍ତାଳାପ",
+    "noMessages": "ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ବାର୍ତ୍ତା ନାହିଁ। ବାର୍ତ୍ତାଳାପ ଆରମ୍ଭ କରନ୍ତୁ!",
+    "typeMessage": "ଆପଣଙ୍କ ବାର୍ତ୍ତା ଟାଇପ୍ କରନ୍ତୁ...",
+    "startVoiceInput": "ଭଏସ୍ ଇନପୁଟ୍ ଆରମ୍ଭ କରନ୍ତୁ",
+    "stopListening": "ଶୁଣିବା ବନ୍ଦ କରନ୍ତୁ",
+    "sendMessage": "ବାର୍ତ୍ତା ପଠାନ୍ତୁ"
   }
 }

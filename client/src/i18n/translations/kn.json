@@ -69,5 +69,18 @@
     "categories": "ವರ್ಗಗಳು",
     "support": "ಬೆಂಬಲ",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "ಕನ್ನಡದಲ್ಲಿ ನೋಡಿ",
+    "showOriginal": "ಮೂಲ ನೋಡಿ",
+    "translating": "ಅನುವಾದ ಮಾಡಲಾಗುತ್ತಿದೆ...",
+    "translationFailed": "ಅನುವಾದ ವಿಫಲವಾಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+    "backToMessages": "ಸಂದೇಶಗಳಿಗೆ ಹಿಂತಿರುಗಿ",
+    "conversation": "ಸಂಭಾಷಣೆ",
+    "noMessages": "ಇನ್ನೂ ಯಾವುದೇ ಸಂದೇಶಗಳಿಲ್ಲ. ಸಂಭಾಷಣೆ ಪ್ರಾರಂಭಿಸಿ!",
+    "typeMessage": "ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ...",
+    "startVoiceInput": "ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಪ್ರಾರಂಭಿಸಿ",
+    "stopListening": "ಕೇಳುವುದನ್ನು ನಿಲ್ಲಿಸಿ",
+    "sendMessage": "ಸಂದೇಶ ಕಳುಹಿಸಿ"
   }
 }

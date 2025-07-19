@@ -12,6 +12,7 @@ const {
   addSavedAddress,
   updateSavedAddress,
   deleteSavedAddress,
+  updatePreferredLanguage,
 } = require("../controllers/userController");
 const { verifyToken, isAdmin, isFarmer } = require("../utils/authMiddleware");
 
@@ -25,6 +26,7 @@ router.get("/farmers/my-profile", verifyToken, isFarmer, getMyFarmerProfile);
 router.post("/farmers/business-hours", verifyToken, isFarmer, createBusinessHours);
 router.put("/profile", verifyToken, updateUserProfile);
 router.put("/farmers/profile", verifyToken, isFarmer, updateFarmerProfile);
+router.put("/language", verifyToken, updatePreferredLanguage);
 
 // Saved addresses routes
 router.get("/saved-addresses", verifyToken, getSavedAddresses);

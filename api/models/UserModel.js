@@ -104,6 +104,11 @@ const UserSchema = new mongoose.Schema(
         default: Date.now,
       }
     }],
+    preferredLanguage: {
+      type: String,
+      enum: ["en", "hi", "bn", "te", "mr", "ta", "gu", "kn", "ml", "pa", "or", "as", "ur"],
+      default: "en",
+    },
     createdAt: {
       type: Date,
       default: Date.now,

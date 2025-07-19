@@ -22,8 +22,8 @@ exports.sendMessage = async (req, res) => {
 
     // Populate sender and receiver for consistent frontend display
     const populatedMessage = await Message.findById(newMessage._id)
-      .populate("sender", "name role")
-      .populate("receiver", "name role");
+      .populate("sender", "name role preferredLanguage")
+      .populate("receiver", "name role preferredLanguage");
 
     res.status(201).json({
       success: true,
@@ -48,8 +48,8 @@ exports.getConversation = async (req, res) => {
       ],
     })
       .sort("createdAt")
-      .populate("sender", "name role")
-      .populate("receiver", "name role");
+      .populate("sender", "name role preferredLanguage")
+      .populate("receiver", "name role preferredLanguage");
 
     res.json({
       success: true,
@@ -72,8 +72,8 @@ exports.getConversations = async (req, res) => {
       $or: [{ sender: req.user._id }, { receiver: req.user._id }],
     })
       .sort("-createdAt")
-      .populate("sender", "name role")
-      .populate("receiver", "name role");
+      .populate("sender", "name role preferredLanguage")
+      .populate("receiver", "name role preferredLanguage");
 
     const conversations = {};
 

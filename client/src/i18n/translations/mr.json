@@ -69,5 +69,18 @@
     "categories": "श्रेण्या",
     "support": "समर्थन",
     "twentyFourSeven": "24/7"
+  },
+  "messaging": {
+    "translate": "मराठीत पहा",
+    "showOriginal": "मूळ पहा",
+    "translating": "भाषांतर करत आहे...",
+    "translationFailed": "भाषांतर अयशस्वी झाले. कृपया पुन्हा प्रयत्न करा.",
+    "backToMessages": "संदेशांकडे परत या",
+    "conversation": "संभाषण",
+    "noMessages": "अद्याप कोणते संदेश नाहीत. संभाषण सुरू करा!",
+    "typeMessage": "तुमचा संदेश टाइप करा...",
+    "startVoiceInput": "आवाज इनपुट सुरू करा",
+    "stopListening": "ऐकणे थांबवा",
+    "sendMessage": "संदेश पाठवा"
   }
 }
