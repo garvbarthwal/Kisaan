@@ -1117,18 +1117,18 @@ exports.askFarmingQuery = async (req, res) => {
         }
 
         // For all other queries (general farming advice), use AI
-        const dualResponse = await generateDualResponse(genAI, query, language);
+        const response = await generateSingleResponse(genAI, query, language);
 
         res.json({
             success: true,
             data: {
                 query: query,
-                answer: dualResponse.speechAnswer, // For speech synthesis
-                speechAnswer: dualResponse.speechAnswer, // Explicit speech version
-                displayAnswer: dualResponse.displayAnswer, // Detailed version for display
+                answer: response, // Single unified response
+                speechAnswer: response, // Same response for speech
+                displayAnswer: response, // Same response for display
                 language: language || 'en',
                 type: 'general_query',
-                hasDisplayData: true
+                hasDisplayData: false // No special display data for general queries
             }
         });
     } catch (error) {
@@ -1725,5 +1725,53 @@ Provide practical, region-specific advice:`;
             speechAnswer: answer,
             displayAnswer: answer
         };
+    }
+};
+
+// Helper function to generate a single response for general queries
+const generateSingleResponse = async (genAI, query, language) => {
+    try {
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.0-flash",
+            generationConfig: {
+                temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 1024,
+            }
+        });
+
+        const prompt = `
+ROLE: You are an expert agricultural advisor specializing in Indian farming practices.
+TASK: Provide a clear, comprehensive, and actionable response to the farmer's query.
+This response will be displayed on screen and can also be read aloud.
+
+CRITICAL INSTRUCTIONS FOR OUTPUT:
+-   **START IMMEDIATELY with the actual content.** Do NOT include any introductory phrases, explanations, or meta-commentary from the AI (e.g., "Here's the answer:", "यहाँ जानकारी है:", "Please find the information below:").
+-   **No Formatting Symbols**: Do NOT use asterisks (*), bolding, bullet points, numbers, or any other markdown formatting. The output should be plain text.
+-   **Use Clear Paragraphs**: Organize information logically with clear paragraphs. You can use line breaks for separation.
+-   **Be Practical and Actionable**: Provide concrete, practical steps or suggestions that farmers can immediately implement.
+-   **Add Relevant Context**: Elaborate on the advice, explaining the "why" behind recommendations when helpful.
+-   **Focus on Indian Farming Conditions**: Ensure the advice is relevant to Indian agricultural practices, climate, seasons, and common challenges.
+-   **Convert Numbers to Words When Spoken**: Use natural number formats (e.g., "50 kg" is fine, but avoid complex decimals).
+-   **Be Comprehensive but Concise**: Provide enough detail without overwhelming the user. Aim for 100-200 words.
+-   **Cover all 13 supported languages naturally**: Ensure the response is fluent and accurate in the requested language.
+
+Query: "${query}"
+
+${language && language !== 'en' ? `Please respond in ${language} language.` : ''}
+
+Provide a clear, practical answer:`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text().trim();
+    } catch (error) {
+        console.error('Error generating single response:', error);
+        // Fallback response
+        const fallbackMessage = language && language !== 'en'
+            ? "मैं इस समय आपकी सहायता नहीं कर सकता। कृपया बाद में पुनः प्रयास करें।"
+            : "I'm unable to help you at the moment. Please try again later.";
+        return fallbackMessage;
     }
 };

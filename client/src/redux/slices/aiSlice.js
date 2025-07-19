@@ -194,14 +194,14 @@ const aiSlice = createSlice({
             .addCase(askFarmingQuery.fulfilled, (state, action) => {
                 state.queryLoading = false
                 state.currentConversation = action.payload.data
-                // Add to conversations history with dual response structure
+                // Add to conversations history with unified response structure
                 const responseData = action.payload.data;
                 state.conversations.unshift({
                     id: Date.now(),
                     query: responseData.query,
-                    answer: responseData.answer, // Speech-optimized response
-                    speechAnswer: responseData.speechAnswer || responseData.answer,
-                    displayAnswer: responseData.displayAnswer || responseData.answer,
+                    answer: responseData.answer, // Unified response for general queries, speech-optimized for stock queries
+                    speechAnswer: responseData.speechAnswer || responseData.answer, // Keep for stock queries
+                    displayAnswer: responseData.displayAnswer || responseData.answer, // Keep for stock queries with special display data
                     processedAnswer: null, // Will be set when speech processing is complete
                     speechReady: false,
                     displayReady: false, // Display will be ready when speech is ready

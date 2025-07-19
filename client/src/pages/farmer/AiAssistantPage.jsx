@@ -130,11 +130,20 @@ const AiAssistantPage = () => {
             if (!conversation || conversation.speechReady) return;
 
             try {
-                // Use speechAnswer if available, otherwise use answer
-                const textForSpeech = conversation.speechAnswer || conversation.answer;
+                // For stock/inventory queries, use the speech-optimized response and apply smart speech processing
+                // For general queries, use the displayed answer exactly as it is without any processing
+                let textForSpeech;
+                let processedText;
 
-                // Generate smart speech text first
-                const processedText = await ttsService.generateSmartSpeechText(textForSpeech, selectedLanguage);
+                if (conversation.type === 'stock_query' || conversation.type === 'inventory_update' || conversation.type === 'disambiguation_needed') {
+                    textForSpeech = conversation.speechAnswer || conversation.answer;
+                    // Generate smart speech text for better pronunciation of numbers, prices, etc.
+                    processedText = await ttsService.generateSmartSpeechText(textForSpeech, selectedLanguage);
+                } else {
+                    // For general queries, use the displayed answer exactly as it is - NO PROCESSING
+                    textForSpeech = conversation.answer;
+                    processedText = textForSpeech; // Direct copy - no smart processing for general queries
+                }
 
                 // Mark conversation as speech ready with processed text
                 dispatch(markConversationSpeechReady({
@@ -158,10 +167,10 @@ const AiAssistantPage = () => {
                 }
             } catch (error) {
                 console.error('Speech processing error:', error);
-                // Mark as ready even if processing fails
+                // Mark as ready even if processing fails - use the displayed answer
                 dispatch(markConversationSpeechReady({
                     conversationId: conversation.id,
-                    processedText: conversation.speechAnswer || conversation.answer
+                    processedText: conversation.answer
                 }));
             }
         };
@@ -819,14 +828,10 @@ const AiAssistantPage = () => {
                                                                                 </div>
                                                                             </div>
                                                                         ) : (
-                                                                            /* Regular detailed text response */
+                                                                            /* Regular unified response - same for all non-stock queries */
                                                                             <div className="prose prose-sm max-w-none">
                                                                                 <p className="text-sm lg:text-base text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
-                                                                                    {typeof conversation.displayAnswer === 'string'
-                                                                                        ? conversation.displayAnswer
-                                                                                        : conversation.displayAnswer?.message
-                                                                                        || conversation.processedAnswer
-                                                                                        || conversation.answer}
+                                                                                    {conversation.answer}
                                                                                 </p>
                                                                             </div>
                                                                         )}
@@ -854,7 +859,7 @@ const AiAssistantPage = () => {
                                                                         )}
                                                                     </p>
                                                                     <div className="flex items-center space-x-2">
-                                                                        {/* Manual Voice Control - only show if speech is ready */}
+                                                                        {/* Unified Speech Control Button */}
                                                                         {conversation.speechReady && (
                                                                             <button
                                                                                 onClick={async () => {
@@ -865,14 +870,15 @@ const AiAssistantPage = () => {
                                                                                         dispatch(setSpeakingState(true));
 
                                                                                         try {
-                                                                                            // Use processed text if available, otherwise generate it
-                                                                                            let textToSpeak = conversation.processedAnswer;
-                                                                                            if (!textToSpeak) {
-                                                                                                const sourceText = conversation.speechAnswer || conversation.answer;
-                                                                                                textToSpeak = await ttsService.generateSmartSpeechText(sourceText, selectedLanguage);
-                                                                                            }
-
-                                                                                            await ttsService.speak(textToSpeak, selectedLanguage, {
+                                                                                            // For general queries, use the original display text without smart processing
+                                                                                            // For stock queries, use the processed text for better number pronunciation
+                                                                                            let textToSpeak;
+                                                                                            if (conversation.type === 'stock_query' || conversation.type === 'inventory_update' || conversation.type === 'disambiguation_needed') {
+                                                                                                textToSpeak = conversation.processedAnswer || conversation.answer;
+                                                                                            } else {
+                                                                                                // For general queries, speak the displayed text exactly - NO PROCESSING
+                                                                                                textToSpeak = conversation.answer;
+                                                                                            } await ttsService.speak(textToSpeak, selectedLanguage, {
                                                                                                 rate: voiceSettings.speechRate,
                                                                                                 pitch: voiceSettings.speechPitch,
                                                                                                 volume: voiceSettings.speechVolume
